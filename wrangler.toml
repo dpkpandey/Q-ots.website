@@ -1,0 +1,18 @@
+name = "q-ots-website"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "/"
+
+# D1 Database binding for community features
+[[d1_databases]]
+binding = "DB"
+database_name = "q-ots-db"
+database_id = "0b3fdbe3-18aa-483c-86cf-8936334d6e83"
+
+# Environment variables (set these in Cloudflare Dashboard)
+# [vars]
+# DEEPSEEK_API_KEY = "your-deepseek-api-key"
+# GOOGLE_CLIENT_ID = "your-google-client-id"
+# GOOGLE_CLIENT_SECRET = "your-google-client-secret"
+# GITHUB_CLIENT_ID = "your-github-client-id"
+# GITHUB_CLIENT_SECRET = "your-github-client-secret"
+# SITE_URL = "https://q-ots-website.pages.dev"
