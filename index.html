@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q-OTS | Quantum-Oriented Tracking System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3a 50%, #0a0e27 100%);
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        /* Typing indicator animation */
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00d4ff;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        code {
+            background: rgba(0, 212, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #00d4ff;
+        }
+
+        strong {
+            color: #00d4ff;
+        }
+
+        .particle-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #00d4ff;
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+
+        header {
+            position: relative;
+            z-index: 10;
+            padding: 2rem 5%;
+            background: rgba(10, 14, 39, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #e0e0e0;
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: #00d4ff;
+        }
+
+        .hero {
+            position: relative;
+            z-index: 10;
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 4rem 5%;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #00d4ff, #a855f7, #00d4ff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient 3s ease infinite;
+        }
+
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            max-width: 800px;
+            margin-bottom: 3rem;
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #0a0e27;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.6);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #00d4ff;
+            border: 2px solid #00d4ff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .features {
+            position: relative;
+            z-index: 10;
+            padding: 6rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 4rem;
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: rgba(26, 29, 58, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+        }
+
+        .feature-card p {
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        /* Chatbot Styles */
+        .chatbot-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        .chat-toggle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 5px 30px rgba(0, 212, 255, 0.5);
+            transition: all 0.3s;
+            animation: pulse-chat 2s infinite;
+        }
+
+        @keyframes pulse-chat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .chat-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 40px rgba(0, 212, 255, 0.7);
+        }
+
+        .chat-window {
+            position: fixed;
+            bottom: 120px;
+            right: 30px;
+            width: 420px;
+            height: 600px;
+            background: rgba(26, 29, 58, 0.98);
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 10px 60px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-window.active {
+            display: flex;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            padding: 1.5rem;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .chat-close {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .chat-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chat-message {
+            padding: 1rem;
+            border-radius: 15px;
+            max-width: 80%;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-message.bot {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            align-self: flex-start;
+        }
+
+        .chat-message.user {
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            color: white;
+            align-self: flex-end;
+        }
+
+        .chat-input-area {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(0, 212, 255, 0.3);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 25px;
+            color: white;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .chat-send {
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .chat-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 212, 255, 0.4);
+        }
+
+        /* Community Q&A Section */
+        .community-qa {
+            position: relative;
+            z-index: 10;
+            padding: 6rem 5%;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .qa-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .qa-tab {
+            padding: 1rem 2rem;
+            background: rgba(26, 29, 58, 0.6);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 50px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .qa-tab.active {
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            color: white;
+            border-color: transparent;
+        }
+
+        .qa-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: none;
+        }
+
+        .qa-content.active {
+            display: block;
+        }
+
+        .qa-post-form {
+            background: rgba(26, 29, 58, 0.6);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .qa-input {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            margin-bottom: 1rem;
+            outline: none;
+        }
+
+        .qa-textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .qa-question {
+            background: rgba(26, 29, 58, 0.6);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .qa-question:hover {
+            border-color: rgba(0, 212, 255, 0.5);
+            transform: translateY(-5px);
+        }
+
+        .qa-question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .qa-question-title {
+            font-size: 1.3rem;
+            color: #00d4ff;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .qa-question-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 1rem;
+        }
+
+        .qa-question-body {
+            color: #b0b0b0;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .qa-stats {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .qa-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .qa-answer-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .qa-answer {
+            background: rgba(0, 212, 255, 0.05);
+            border-left: 3px solid #00d4ff;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+        }
+
+        footer {
+            position: relative;
+            z-index: 10;
+            padding: 3rem 5%;
+            text-align: center;
+            background: rgba(10, 14, 39, 0.8);
+            border-top: 1px solid rgba(0, 212, 255, 0.3);
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #b0b0b0;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #00d4ff;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .chat-window {
+                width: calc(100vw - 40px);
+                right: 20px;
+                bottom: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particle-bg" id="particleBg"></div>
+
+    <header>
+        <nav>
+            <div class="logo">Q-OTS</div>
+            <ul class="nav-links">
+                <li><a href="#features">Architecture</a></li>
+                <li><a href="#community">Community</a></li>
+                <li><a href="#code">Code</a></li>
+                <li><a href="mailto:dpkarcai@protonmail.com">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>Quantum-Oriented Tracking System</h1>
+        <p>Next-generation PyTorch-based deep learning model combining quantum-inspired neural architectures with advanced transformer mechanisms. Built from scratch with state-of-the-art attention layers, differentiable physics, and neural ODEs.</p>
+        <div class="cta-buttons">
+            <a href="#community" class="btn btn-primary">Join Community</a>
+            <a href="https://github.com/dpkpandey/QSort" class="btn btn-secondary" target="_blank">View on GitHub</a>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <h2 class="section-title">Advanced Neural Architecture</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3>Quantum Attention Mechanism</h3>
+                <p>Custom PyTorch attention layers inspired by quantum superposition, enabling parallel processing of multiple motion hypotheses with learnable interference patterns.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔬</div>
+                <h3>Differentiable Physics Engine</h3>
+                <p>Neural ODE integration for continuous-time dynamics modeling with automatic differentiation through physical constraints and energy minimization.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Graph Neural Network Core</h3>
+                <p>Advanced GNN architecture for multi-object relationship modeling with dynamic edge updates and message passing for occlusion handling.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Transformer-Based Backbone</h3>
+                <p>Vision Transformer (ViT) foundation with custom positional encodings for spatio-temporal feature extraction and long-range dependency modeling.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌊</div>
+                <h3>Probabilistic Neural Flows</h3>
+                <p>Normalizing flows for uncertainty quantification with invertible neural networks learning complex trajectory distributions.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>End-to-End PyTorch Pipeline</h3>
+                <p>Fully differentiable architecture from detection to tracking with custom CUDA kernels for real-time inference.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="community-qa" id="community">
+        <div style="max-width: 1400px; margin: 0 auto;">
+            <h2 class="section-title">Community & Support</h2>
+            
+            <div class="qa-tabs">
+                <div class="qa-tab active" data-tab="questions">Questions & Answers</div>
+                <div class="qa-tab" data-tab="discussions">Discussions</div>
+                <div class="qa-tab" data-tab="showcase">Project Showcase</div>
+            </div>
+
+            <div id="questions" class="qa-content active">
+                <div class="qa-post-form">
+                    <h3 style="color: #00d4ff; margin-bottom: 1rem;">Ask a Question</h3>
+                    <input type="text" class="qa-input" id="questionTitle" placeholder="Question title...">
+                    <textarea class="qa-input qa-textarea" id="questionBody" placeholder="Describe your question in detail..."></textarea>
+                    <input type="text" class="qa-input" id="questionAuthor" placeholder="Your name...">
+                    <button class="btn btn-primary" onclick="postQuestion()">Post Question</button>
+                </div>
+
+                <div id="questionsList"></div>
+            </div>
+
+            <div id="discussions" class="qa-content">
+                <div class="qa-post-form">
+                    <h3 style="color: #00d4ff; margin-bottom: 1rem;">Start a Discussion</h3>
+                    <input type="text" class="qa-input" placeholder="Discussion topic...">
+                    <textarea class="qa-input qa-textarea" placeholder="Share your thoughts..."></textarea>
+                    <input type="text" class="qa-input" placeholder="Your name...">
+                    <button class="btn btn-primary">Start Discussion</button>
+                </div>
+            </div>
+
+            <div id="showcase" class="qa-content">
+                <div class="qa-post-form">
+                    <h3 style="color: #00d4ff; margin-bottom: 1rem;">Share Your Project</h3>
+                    <input type="text" class="qa-input" placeholder="Project name...">
+                    <textarea class="qa-input qa-textarea" placeholder="Project description..."></textarea>
+                    <input type="text" class="qa-input" placeholder="GitHub/Demo link...">
+                    <button class="btn btn-primary">Submit Project</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="https://github.com/dpkpandey" target="_blank">GitHub</a>
+                <a href="mailto:dpkarcai@protonmail.com">dpkarcai@protonmail.com</a>
+                <a href="#">Documentation</a>
+                <a href="#">Research Paper</a>
+                <a href="#">API Reference</a>
+            </div>
+            <p style="color: #666; margin-top: 2rem;">
+                © 2025 Q-OTS | Quantum-Oriented Tracking System
+            </p>
+            <p style="color: #555; margin-top: 1rem; font-size: 0.9rem;">
+                Developed by Deepak Pandey | Advanced PyTorch ML Framework
+            </p>
+        </div>
+    </footer>
+
+    <!-- AI Chatbot Widget -->
+    <div class="chatbot-widget">
+        <button class="chat-toggle" id="chatToggle">💬</button>
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <h3>Q-OTS AI Assistant</h3>
+                <button class="chat-close" id="chatClose">×</button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-message bot">
+                    Hello! I'm the Q-OTS AI Assistant. I can help you understand the Quantum-Oriented Tracking System architecture, explain concepts from the research paper, discuss PyTorch implementation details, and answer questions about neural networks. What would you like to know?
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Ask about Q-OTS...">
+                <button class="chat-send" id="chatSend">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Create animated particle background
+        const particleBg = document.getElementById('particleBg');
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 20 + 's';
+            particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+            particleBg.appendChild(particle);
+        }
+
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Chatbot functionality
+        const chatToggle = document.getElementById('chatToggle');
+        const chatWindow = document.getElementById('chatWindow');
+        const chatClose = document.getElementById('chatClose');
+        const chatInput = document.getElementById('chatInput');
+        const chatSend = document.getElementById('chatSend');
+        const chatMessages = document.getElementById('chatMessages');
+
+        chatToggle.addEventListener('click', () => {
+            chatWindow.classList.add('active');
+        });
+
+        chatClose.addEventListener('click', () => {
+            chatWindow.classList.remove('active');
+        });
+
+        chatSend.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, 'user');
+            chatInput.value = '';
+
+            setTimeout(() => {
+                const response = generateAIResponse(message);
+                addMessage(response, 'bot');
+            }, 1000);
+        }
+
+        function addMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type}`;
+            messageDiv.textContent = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function generateAIResponse(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            if (lowerMessage.includes('quantum') || lowerMessage.includes('bloch')) {
+                return "Q-OTS uses quantum-inspired Bloch sphere representations to encode motion regimes. Each sphere represents direction, turning, and speed states, forming a multi-qubit tensor that captures complex nonlinear behavior beyond classical tracking methods.";
+            } else if (lowerMessage.includes('neural ode') || lowerMessage.includes('ode')) {
+                return "Neural ODEs in Q-OTS provide continuous-time trajectory modeling with automatic differentiation through physics constraints. This enables smooth prediction of object motion paths with energy minimization principles.";
+            } else if (lowerMessage.includes('pytorch') || lowerMessage.includes('implementation')) {
+                return "Q-OTS is built entirely in PyTorch with custom nn.Module implementations. It integrates Vision Transformers, Graph Neural Networks, Neural ODEs, and Normalizing Flows in a fully differentiable pipeline with custom CUDA kernels for real-time performance.";
+            } else if (lowerMessage.includes('performance') || lowerMessage.includes('fps')) {
+                return "Q-OTS is designed for real-time inference targeting 120+ FPS on modern GPUs through mixed precision training (FP16/BF16), gradient checkpointing, and efficient memory management. Currently in development phase.";
+            } else if (lowerMessage.includes('yolo') || lowerMessage.includes('comparison')) {
+                return "Unlike YOLO which focuses on detection, Q-OTS integrates detection, tracking, and trajectory prediction in one unified framework. It uses quantum-inspired architectures and differentiable physics for superior motion understanding.";
+            } else if (lowerMessage.includes('help') || lowerMessage.includes('start')) {
+                return "You can ask me about: Quantum attention mechanisms, Bloch sphere encoding, Neural ODEs, PyTorch implementation, GNN architecture, training process, or comparison with other tracking systems. What interests you most?";
+            } else {
+                return "That's an interesting question! Q-OTS combines classical mechanics, probabilistic fields, and quantum-inspired representations for robust tracking. Could you ask more specifically about quantum attention, neural ODEs, PyTorch implementation, or the architecture? For detailed discussions, join our community Q&A!";
+            }
+        }
+
+        // Community Q&A functionality
+        document.querySelectorAll('.qa-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.qa-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.qa-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab).classList.add('active');
+            });
+        });
+
+        // Sample questions for demo
+        const sampleQuestions = [
+            {
+                title: "How does the Quantum Attention mechanism work?",
+                body: "I'm trying to understand how Q-OTS implements quantum-inspired attention. Can someone explain the phase modulation and superposition concepts?",
+                author: "Alex Chen",
+                date: "2 hours ago",
+                answers: 3,
+                views: 45,
+                responses: [
+                    {
+                        author: "Maria Rodriguez",
+                        text: "The quantum attention uses phase modulation through learnable parameters that create interference patterns. It's inspired by quantum superposition where multiple motion hypotheses exist simultaneously until 'measured' by the detection.",
+                        date: "1 hour ago"
+                    }
+                ]
+            },
+            {
+                title: "PyTorch implementation - where to start?",
+                body: "New to the project. What are the key PyTorch modules I should focus on first?",
+                author: "Sam Park",
+                date: "5 hours ago",
+                answers: 2,
+                views: 67
+            },
+            {
+                title: "Difference between Q-OTS and DeepSORT?",
+                body: "Can someone explain the main architectural differences and why Q-OTS performs better on nonlinear motion?",
+                author: "Jordan Lee",
+                date: "1 day ago",
+                answers: 5,
+                views: 134
+            }
+        ];
+
+        function loadSampleQuestions() {
+            const questionsList = document.getElementById('questionsList');
+            sampleQuestions.forEach(q => {
+                const questionDiv = createQuestionElement(q);
+                questionsList.appendChild(questionDiv);
+            });
+        }
+
+        function createQuestionElement(q) {
+            const div = document.createElement('div');
+            div.className = 'qa-question';
+            div.innerHTML = `
+                <div class="qa-question-header">
+                    <div class="qa-question-title">${q.title}</div>
+                </div>
+                <div class="qa-question-meta">
+                    <span>👤 ${q.author}</span>
+                    <span>🕐 ${q.date}</span>
+                </div>
+                <div class="qa-question-body">${q.body}</div>
+                <div class="qa-stats">
+                    <div class="qa-stat">💬 ${q.answers} answers</div>
+                    <div class="qa-stat">👁️ ${q.views} views</div>
+                    <div class="qa-stat" style="color: #00d4ff; cursor: pointer;" onclick="toggleAnswers(this)">View Answers →</div>
+                </div>
+                <div class="qa-answer-section" style="display: none;">
+                    ${q.responses ? q.responses.map(r => `
+                        <div class="qa-answer">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <strong style="color: #00d4ff;">${r.author}</strong>
+                                <span style="color: #888; font-size: 0.9rem;">${r.date}</span>
+                            </div>
+                            <div style="color: #b0b0b0;">${r.text}</div>
+                        </div>
+                    `).join('') : ''}
+                    <div class="qa-post-form" style="margin-top: 1rem;">
+                        <textarea class="qa-input qa-textarea" placeholder="Write your answer..." style="min-height: 100px;"></textarea>
+                        <input type="text" class="qa-input" placeholder="Your name...">
+                        <button class="btn btn-primary" style="padding: 0.8rem 2rem; font-size: 0.9rem;">Post Answer</button>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+
+        function toggleAnswers(element) {
+            const answerSection = element.closest('.qa-question').querySelector('.qa-answer-section');
+            if (answerSection.style.display === 'none') {
+                answerSection.style.display = 'block';
+                element.textContent = 'Hide Answers ↑';
+            } else {
+                answerSection.style.display = 'none';
+                element.textContent = 'View Answers →';
+            }
+        }
+
+        function postQuestion() {
+            const title = document.getElementById('questionTitle').value.trim();
+            const body = document.getElementById('questionBody').value.trim();
+            const author = document.getElementById('questionAuthor').value.trim();
+
+            if (!title || !body || !author) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            const newQuestion = {
+                title: title,
+                body: body,
+                author: author,
+                date: 'Just now',
+                answers: 0,
+                views: 1
+            };
+
+            const questionsList = document.getElementById('questionsList');
+            questionsList.insertBefore(createQuestionElement(newQuestion), questionsList.firstChild);
+
+            document.getElementById('questionTitle').value = '';
+            document.getElementById('questionBody').value = '';
+            document.getElementById('questionAuthor').value = '';
+
+            addMessage("Your question has been posted! The community will help you soon.", 'bot');
+        }
+
+        // Load sample questions on page load
+        window.addEventListener('load', () => {
+            loadSampleQuestions();
+        });
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q-OTS | Quantum-Oriented Tracking System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3a 50%, #0a0e27 100%);
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        .particle-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.3;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #00d4ff;
+            border-radius: 50%;
+            animation: float 20s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+
+        header {
+            position: relative;
+            z-index: 10;
+            padding: 2rem 5%;
+            background: rgba(10, 14, 39, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #e0e0e0;
+            text-decoration: none;
+            transition: color 0.3s;
+            font-weight: 500;
+        }
+
+        .nav-links a:hover {
+            color: #00d4ff;
+        }
+
+        .hero {
+            position: relative;
+            z-index: 10;
+            min-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 4rem 5%;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #00d4ff, #a855f7, #00d4ff);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient 3s ease infinite;
+        }
+
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            max-width: 800px;
+            margin-bottom: 3rem;
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: #0a0e27;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.6);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #00d4ff;
+            border: 2px solid #00d4ff;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .features {
+            position: relative;
+            z-index: 10;
+            padding: 6rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 4rem;
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: rgba(26, 29, 58, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #00d4ff;
+        }
+
+        .feature-card p {
+            color: #b0b0b0;
+            line-height: 1.6;
+        }
+
+        .architecture {
+            position: relative;
+            z-index: 10;
+            padding: 6rem 5%;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .pipeline-flow {
+            max-width: 1200px;
+            margin: 3rem auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .pipeline-step {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(168, 85, 247, 0.1));
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            min-width: 150px;
+            transition: all 0.3s;
+        }
+
+        .pipeline-step:hover {
+            transform: scale(1.05);
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .arrow {
+            font-size: 2rem;
+            color: #00d4ff;
+        }
+
+        .performance {
+            position: relative;
+            z-index: 10;
+            padding: 6rem 5%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .stat-card {
+            background: rgba(0, 212, 255, 0.05);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: #00d4ff;
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #b0b0b0;
+            font-size: 1.1rem;
+        }
+
+        .applications {
+            position: relative;
+            z-index: 10;
+            padding: 6rem 5%;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .app-grid {
+            max-width: 1400px;
+            margin: 3rem auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .app-card {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(168, 85, 247, 0.05));
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 20px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        .app-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(0, 212, 255, 0.5);
+            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.2);
+        }
+
+        .app-card h4 {
+            color: #00d4ff;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+
+        .app-card ul {
+            list-style: none;
+            color: #b0b0b0;
+        }
+
+        .app-card li:before {
+            content: "→ ";
+            color: #a855f7;
+            font-weight: bold;
+        }
+
+        footer {
+            position: relative;
+            z-index: 10;
+            padding: 3rem 5%;
+            text-align: center;
+            background: rgba(10, 14, 39, 0.8);
+            border-top: 1px solid rgba(0, 212, 255, 0.3);
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #b0b0b0;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #00d4ff;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .pipeline-flow {
+                flex-direction: column;
+            }
+
+            .arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particle-bg" id="particleBg"></div>
+
+    <header>
+        <nav>
+            <div class="logo">Q-OTS</div>
+            <ul class="nav-links">
+                <li><a href="#features">Architecture</a></li>
+                <li><a href="#architecture">Model</a></li>
+                <li><a href="#performance">Benchmarks</a></li>
+                <li><a href="#code">Code</a></li>
+                <li><a href="#applications">Use Cases</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1>Quantum-Oriented Tracking System</h1>
+        <p>Next-generation PyTorch-based deep learning model combining quantum-inspired neural architectures with advanced transformer mechanisms. Built from scratch with state-of-the-art attention layers, differentiable physics, and neural ODEs for breakthrough performance in real-time object tracking.</p>
+        <div class="cta-buttons">
+            <a href="#model" class="btn btn-primary">Explore Model</a>
+            <a href="#" class="btn btn-secondary">PyTorch Implementation</a>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <h2 class="section-title">Advanced Neural Architecture</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <h3>Quantum Attention Mechanism</h3>
+                <p>Custom PyTorch attention layers inspired by quantum superposition, enabling parallel processing of multiple motion hypotheses with learnable interference patterns.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔬</div>
+                <h3>Differentiable Physics Engine</h3>
+                <p>Neural ODE integration for continuous-time dynamics modeling with automatic differentiation through physical constraints and energy minimization.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Graph Neural Network Core</h3>
+                <p>Advanced GNN architecture for multi-object relationship modeling with dynamic edge updates and message passing for occlusion handling.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Transformer-Based Backbone</h3>
+                <p>Vision Transformer (ViT) foundation with custom positional encodings for spatio-temporal feature extraction and long-range dependency modeling.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌊</div>
+                <h3>Probabilistic Neural Flows</h3>
+                <p>Normalizing flows for uncertainty quantification with invertible neural networks learning complex trajectory distributions.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <h3>End-to-End PyTorch Pipeline</h3>
+                <p>Fully differentiable architecture from detection to tracking with custom CUDA kernels for real-time inference at 120+ FPS on modern GPUs.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="architecture" id="architecture">
+        <h2 class="section-title">PyTorch Model Architecture</h2>
+        <div class="pipeline-flow">
+            <div class="pipeline-step">Vision Encoder<br/><small>(ViT/ResNet)</small></div>
+            <div class="arrow">→</div>
+            <div class="pipeline-step">Feature Pyramid<br/><small>(FPN)</small></div>
+            <div class="arrow">→</div>
+            <div class="pipeline-step">Quantum Attention<br/><small>(Multi-Head)</small></div>
+            <div class="arrow">→</div>
+            <div class="pipeline-step">GNN Tracking<br/><small>(Message Pass)</small></div>
+            <div class="arrow">→</div>
+            <div class="pipeline-step">Neural ODE<br/><small>(Physics)</small></div>
+            <div class="arrow">→</div>
+            <div class="pipeline-step">Normalizing Flow<br/><small>(Uncertainty)</small></div>
+            <div class="arrow">→</div>
+            <div class="pipeline-step">Detection Head<br/><small>(YOLO-like)</small></div>
+        </div>
+        <p style="text-align: center; color: #b0b0b0; max-width: 900px; margin: 2rem auto; line-height: 1.8;">
+            Built entirely in PyTorch with custom nn.Module implementations. Integrates advanced architectures including Vision Transformers, Graph Neural Networks, Neural ODEs, and Normalizing Flows. Fully differentiable end-to-end training with gradient flow through physics constraints.
+        </p>
+        
+        <div style="max-width: 1000px; margin: 3rem auto; background: rgba(0, 212, 255, 0.05); border: 2px solid rgba(0, 212, 255, 0.3); border-radius: 20px; padding: 2.5rem;">
+            <h3 style="color: #00d4ff; text-align: center; margin-bottom: 2rem;">Model Components</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                <div>
+                    <h4 style="color: #a855f7; margin-bottom: 0.5rem;">🎯 Detection Module</h4>
+                    <p style="color: #b0b0b0; font-size: 0.95rem;">Custom anchor-free detector with deformable convolutions</p>
+                </div>
+                <div>
+                    <h4 style="color: #a855f7; margin-bottom: 0.5rem;">🔗 Association Module</h4>
+                    <p style="color: #b0b0b0; font-size: 0.95rem;">GNN-based learned matching with attention scoring</p>
+                </div>
+                <div>
+                    <h4 style="color: #a855f7; margin-bottom: 0.5rem;">📊 Prediction Module</h4>
+                    <p style="color: #b0b0b0; font-size: 0.95rem;">Neural ODE for continuous trajectory forecasting</p>
+                </div>
+                <div>
+                    <h4 style="color: #a855f7; margin-bottom: 0.5rem;">🌀 Uncertainty Module</h4>
+                    <p style="color: #b0b0b0; font-size: 0.95rem;">Normalizing flows for probabilistic predictions</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="performance" id="performance">
+        <h2 class="section-title">Target Performance Goals</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">Quantum</div>
+                <div class="stat-label">Attention Layers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">Neural</div>
+                <div class="stat-label">ODE Integration</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">GNN</div>
+                <div class="stat-label">Graph Networks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">E2E</div>
+                <div class="stat-label">Differentiable</div>
+            </div>
+        </div>
+        <p style="text-align: center; color: #b0b0b0; max-width: 800px; margin: 3rem auto; line-height: 1.8;">
+            Q-OTS is currently in development, aiming to surpass existing tracking methods through advanced PyTorch optimization: custom CUDA kernels, mixed precision training (FP16/BF16), gradient checkpointing, and efficient memory management. Targeting superior performance across MOTA, IDF1, and real-time FPS metrics.
+        </p>
+        
+        <div style="max-width: 1200px; margin: 3rem auto;">
+            <h3 style="color: #00d4ff; text-align: center; margin-bottom: 2rem;">Development Roadmap</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 15px; padding: 1.5rem;">
+                    <h4 style="color: #a855f7; margin-bottom: 1rem;">🔧 Phase 1: Architecture</h4>
+                    <p style="color: #b0b0b0;">Building core PyTorch modules and quantum-inspired components</p>
+                </div>
+                <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 15px; padding: 1.5rem;">
+                    <h4 style="color: #a855f7; margin-bottom: 1rem;">📉 Phase 2: Training</h4>
+                    <p style="color: #b0b0b0;">Multi-task loss optimization with gradient flow validation</p>
+                </div>
+                <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 15px; padding: 1.5rem;">
+                    <h4 style="color: #a855f7; margin-bottom: 1rem;">🎯 Phase 3: Benchmarking</h4>
+                    <p style="color: #b0b0b0;">Testing against YOLO, SORT, DeepSORT on standard datasets</p>
+                </div>
+                <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 15px; padding: 1.5rem;">
+                    <h4 style="color: #a855f7; margin-bottom: 1rem;">⚡ Phase 4: Optimization</h4>
+                    <p style="color: #b0b0b0;">CUDA kernel development and real-time inference tuning</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="applications" id="applications">
+        <h2 class="section-title">Real-World Applications</h2>
+        <div class="app-grid">
+            <div class="app-card">
+                <h4>🎥 Autonomous Surveillance</h4>
+                <ul>
+                    <li>Multi-camera tracking fusion</li>
+                    <li>Crowded scene understanding</li>
+                    <li>Re-identification across views</li>
+                    <li>Anomaly detection integration</li>
+                </ul>
+            </div>
+
+            <div class="app-card">
+                <h4>🚗 Autonomous Vehicles</h4>
+                <ul>
+                    <li>Pedestrian & vehicle tracking</li>
+                    <li>Trajectory prediction (5-10s ahead)</li>
+                    <li>Intent recognition</li>
+                    <li>Sensor fusion (LiDAR + Camera)</li>
+                </ul>
+            </div>
+
+            <div class="app-card">
+                <h4>⚽ Sports Analytics</h4>
+                <ul>
+                    <li>Player tracking & heatmaps</li>
+                    <li>Ball trajectory prediction</li>
+                    <li>Team formation analysis</li>
+                    <li>Performance metrics extraction</li>
+                </ul>
+            </div>
+
+            <div class="app-card">
+                <h4>🏭 Industrial Automation</h4>
+                <ul>
+                    <li>Robot workspace monitoring</li>
+                    <li>Quality control tracking</li>
+                    <li>Assembly line optimization</li>
+                    <li>Safety zone enforcement</li>
+                </ul>
+            </div>
+
+            <div class="app-card">
+                <h4>🧬 Biomedical Imaging</h4>
+                <ul>
+                    <li>Cell tracking in microscopy</li>
+                    <li>Protein motion analysis</li>
+                    <li>Particle flow cytometry</li>
+                    <li>Drug response monitoring</li>
+                </ul>
+            </div>
+
+            <div class="app-card">
+                <h4>🎮 AR/VR & Gaming</h4>
+                <ul>
+                    <li>Hand & gesture tracking</li>
+                    <li>Full body motion capture</li>
+                    <li>Object interaction prediction</li>
+                    <li>Real-time physics simulation</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="code" style="position: relative; z-index: 10; padding: 6rem 5%; max-width: 1400px; margin: 0 auto;">
+        <h2 class="section-title">PyTorch Implementation</h2>
+        <div style="background: rgba(10, 14, 39, 0.9); border: 2px solid rgba(0, 212, 255, 0.3); border-radius: 20px; padding: 2.5rem; margin-top: 2rem;">
+            <pre style="color: #00d4ff; font-family: 'Courier New', monospace; overflow-x: auto; line-height: 1.6;"><code><span style="color: #a855f7;">import</span> torch
+<span style="color: #a855f7;">import</span> torch.nn <span style="color: #a855f7;">as</span> nn
+<span style="color: #a855f7;">from</span> torch_geometric.nn <span style="color: #a855f7;">import</span> GATConv
+<span style="color: #a855f7;">from</span> torchdiffeq <span style="color: #a855f7;">import</span> odeint
+
+<span style="color: #a855f7;">class</span> <span style="color: #00d4ff;">QuantumAttention</span>(nn.Module):
+    <span style="color: #a855f7;">def</span> <span style="color: #00d4ff;">__init__</span>(self, dim, heads=8):
+        <span style="color: #a855f7;">super</span>().__init__()
+        self.attention = nn.MultiheadAttention(dim, heads)
+        self.quantum_phase = nn.Parameter(torch.randn(dim))
+        
+    <span style="color: #a855f7;">def</span> <span style="color: #00d4ff;">forward</span>(self, x):
+        <span style="color: #666;"># Apply quantum-inspired phase modulation</span>
+        x = x * torch.exp(1j * self.quantum_phase)
+        attn_out, _ = self.attention(x, x, x)
+        <span style="color: #a855f7;">return</span> attn_out.real
+
+<span style="color: #a855f7;">class</span> <span style="color: #00d4ff;">QOTS</span>(nn.Module):
+    <span style="color: #a855f7;">def</span> <span style="color: #00d4ff;">__init__</span>(self, num_classes=80):
+        <span style="color: #a855f7;">super</span>().__init__()
+        self.backbone = nn.Sequential(<span style="color: #666;"># Vision encoder</span>)
+        self.quantum_attn = QuantumAttention(512)
+        self.gnn = GATConv(512, 256, heads=4)
+        self.ode_func = ODEFunc(256)
+        self.detection_head = DetectionHead(256, num_classes)
+        
+    <span style="color: #a855f7;">def</span> <span style="color: #00d4ff;">forward</span>(self, x, t_span):
+        features = self.backbone(x)
+        features = self.quantum_attn(features)
+        
+        <span style="color: #666;"># Neural ODE for trajectory prediction</span>
+        trajectories = odeint(self.ode_func, features, t_span)
+        
+        detections = self.detection_head(trajectories[-1])
+        <span style="color: #a855f7;">return</span> detections</code></pre>
+        </div>
+        
+        <div style="margin-top: 2rem; text-align: center;">
+            <a href="#" class="btn btn-primary" style="margin: 0.5rem;">📥 Download Full Code</a>
+            <a href="#" class="btn btn-secondary" style="margin: 0.5rem;">⭐ GitHub Repository</a>
+            <a href="#" class="btn btn-secondary" style="margin: 0.5rem;">📚 Model Weights</a>
+        </div>
+    </section>
+
+    <footer id="contact">
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="#">PyTorch Hub</a>
+                <a href="#">GitHub</a>
+                <a href="#">Research Paper (arXiv)</a>
+                <a href="#">API Docs</a>
+                <a href="#">Pretrained Models</a>
+                <a href="#">Training Notebooks</a>
+            </div>
+            <p style="color: #666; margin-top: 2rem;">
+                © 2025 Q-OTS | Built with PyTorch | Advanced Neural Architecture for Object Tracking
+            </p>
+            <p style="color: #555; margin-top: 1rem; font-size: 0.9rem;">
+                Quantum-Oriented Tracking System | Next-Gen ML Framework Beyond YOLO
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Create animated particle background
+        const particleBg = document.getElementById('particleBg');
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 20 + 's';
+            particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+            particleBg.appendChild(particle);
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
