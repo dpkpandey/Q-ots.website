@@ -1,537 +1,669 @@
-// ============================================
-// Q-OTS WEBSITE - MAIN JAVASCRIPT
-// Complete QSort Knowledge + Navigation + Community
-// ============================================
+// chat.js - Complete implementation for Q-OTS website
+// Works with the existing index.html without modifications
 
-// QSORT KNOWLEDGE BASE
-const QSORT_KNOWLEDGE = {
-    concepts: {
-        "qpand": {
-            definition: "QPand (Quantum-enhanced Position and Dynamics) is a 17-dimensional extended state vector capturing position (x,y), velocity (vx,vy), acceleration (ax,ay), curvature (κ), jerk (jx,jy), heading angle (θ), angular velocity (ω), scale (w,h), aspect ratio, and confidence score.",
-            formula: "QPand = [x, y, vx, vy, ax, ay, κ, jx, jy, θ, ω, w, h, r, c]",
-            importance: "Unlike the traditional Kalman filter's 4-8 dimensional state, QPand captures curvature for trajectory shape, jerk for acceleration changes, and heading for directional encoding."
-        },
-        "curvature": {
-            definition: "Curvature (κ) measures how sharply a trajectory bends. Computed as κ = |v × a| / |v|³",
-            formula: "κ = |v × a| / |v|³",
-            importance: "Enables the tracker to predict and handle turns, unlike linear Kalman filters."
-        },
-        "boltzmann": {
-            definition: "The Boltzmann Motion Field uses statistical mechanics to model motion probability: P(x) = (1/Z) × exp(-E(x)/kT)",
-            formula: "P(x) = (1/Z) × exp(-E(x)/kT)",
-            importance: "Provides principled uncertainty quantification with temperature T increasing during occlusions."
-        },
-        "bloch": {
-            definition: "The Bloch sphere represents motion states as points on a unit sphere: |ψ⟩ = cos(θ/2)|0⟩ + e^(iφ)sin(θ/2)|1⟩",
-            formula: "|ψ⟩ = cos(θ/2)|0⟩ + e^(iφ)sin(θ/2)|1⟩",
-            importance: "Enables multi-regime motion encoding (walking, running, turning) and interference-based matching."
-        },
-        "wavepacket": {
-            definition: "Wavepackets are localized probability distributions: ψ(x,t) = A × exp(-(x-x₀)²/4σ² + ikx - iωt)",
-            formula: "ψ(x,t) = A × exp(-(x-x₀)²/4σ² + ikx - iωt)",
-            importance: "During occlusions, wavepackets spread naturally. Re-detection 'collapses' them back."
-        },
-        "neural ode": {
-            definition: "Neural ODEs learn dynamics as dx/dt = f_θ(x,t) where f_θ is a neural network.",
-            formula: "dx/dt = f_θ(x,t)",
-            importance: "Learns complex nonlinear dynamics from data with physics constraints."
-        },
-        "quantum attention": {
-            definition: "Phase-modulated attention: Attention(Q,K,V) = softmax(QK^T × e^(iΦ) / √d) × V",
-            formula: "Attention(Q,K,V) = softmax(QK^T × e^(iΦ) / √d) × V",
-            importance: "Creates interference patterns for better feature matching in crowds."
-        },
-        "kalman": {
-            definition: "The Kalman filter is a recursive estimator assuming linear dynamics and Gaussian noise.",
-            formula: "x_t = Fx_{t-1} + w",
-            importance: "Foundation of SORT tracker but limited by linear assumptions."
-        },
-        "sort": {
-            definition: "SORT uses Kalman filtering for motion prediction and Hungarian algorithm for association.",
-            importance: "Baseline tracker that Q-OTS improves upon."
-        },
-        "deepsort": {
-            definition: "DeepSORT extends SORT with deep appearance features (ReID) for better association.",
-            importance: "Adds appearance but still uses linear Kalman motion."
-        },
-        "bytetrack": {
-            definition: "ByteTrack uses both high and low confidence detections in two-stage association.",
-            importance: "Improves detection utilization but doesn't fix motion modeling."
-        }
-    },
-    comparisons: {
-        "qsort_vs_sort": "SORT uses 4-8 dim Kalman state with linear dynamics. Q-OTS uses 17-dim QPand with nonlinear Neural ODEs, Boltzmann fields, and quantum representations.",
-        "qsort_vs_deepsort": "DeepSORT adds appearance but keeps linear motion. Q-OTS provides superior motion modeling through physics-grounded components.",
-        "qsort_vs_bytetrack": "ByteTrack improves detection usage but not motion modeling. Q-OTS addresses fundamental linear dynamics limitations."
-    },
-    formulas: {
-        "curvature": "κ = |v × a| / |v|³",
-        "boltzmann": "P(x) = (1/Z) × exp(-E(x)/kT)",
-        "bloch": "|ψ⟩ = cos(θ/2)|0⟩ + e^(iφ)sin(θ/2)|1⟩",
-        "wavepacket": "ψ(x,t) = A × exp(-(x-x₀)²/4σ² + ikx - iωt)",
-        "neural_ode": "dx/dt = f_θ(x,t)",
-        "spreading": "σ(t) = σ₀√(1 + (ℏt/2mσ₀²)²)"
-    }
+// Configuration
+const CONFIG = {
+    API_BASE: '/api',
+    DEEPSEEK_URL: '/api/chat'
 };
 
-// FEATURE CONTENT
-const FEATURE_CONTENT = {
-    qpand: {
-        title: "🎯 The QPand State Vector",
-        content: `<p><strong>17-Dimensional State:</strong> Position (x,y), Velocity (vx,vy), Acceleration (ax,ay), Curvature κ, Jerk (jx,jy), Heading θ, Angular velocity ω, Scale (w,h), Confidence.</p>`,
-        code: `class QPandState:
-    def __init__(self, det):
-        self.position = det[:2]
-        self.velocity = np.zeros(2)
-        self.acceleration = np.zeros(2)
-        self.curvature = 0.0
-        self.jerk = np.zeros(2)
-        self.heading = 0.0
-        self.angular_vel = 0.0`
-    },
-    boltzmann: {
-        title: "🌡️ Boltzmann Motion Field",
-        content: `<p><strong>P(x) = (1/Z) × exp(-E(x)/kT)</strong> - Energy-based probability with temperature increasing during occlusions.</p>`,
-        code: `def boltzmann_probability(state, T):
-    E = compute_energy(state)
-    prob = torch.exp(-E / T)
-    return prob / prob.sum()`
-    },
-    bloch: {
-        title: "🔮 Bloch Sphere Representation",
-        content: `<p><strong>|ψ⟩ = cos(θ/2)|0⟩ + e^(iφ)sin(θ/2)|1⟩</strong> - Motion regime in θ, temporal phase in φ.</p>`,
-        code: `def bloch_encode(motion):
-    theta = intensity_to_angle(motion.speed)
-    phi = regime_to_phase(motion.type)
-    return [sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta)]`
-    },
-    wavepacket: {
-        title: "〰️ Wavepacket Dynamics",
-        content: `<p><strong>ψ(x,t) = A × exp(-(x-x₀)²/4σ² + ikx - iωt)</strong> - Spreads during occlusion, collapses on detection.</p>`,
-        code: `def evolve_wavepacket(sigma0, dt, mass=1.0):
-    spread = (hbar * dt) / (2 * mass * sigma0**2)
-    return sigma0 * sqrt(1 + spread**2)`
-    },
-    neuralode: {
-        title: "🧠 Neural ODEs",
-        content: `<p><strong>dx/dt = f_θ(x,t)</strong> - Physics-informed neural network learns nonlinear dynamics.</p>`,
-        code: `class MotionODE(nn.Module):
-    def forward(self, t, state):
-        return self.net(torch.cat([state, t], dim=-1))`
-    },
-    attention: {
-        title: "⚡ Quantum Attention",
-        content: `<p><strong>Attention = softmax(QK^T × e^(iΦ) / √d) × V</strong> - Phase modulation for interference-based matching.</p>`,
-        code: `def quantum_attention(q, k, v, phase):
-    scores = torch.matmul(q, k.T) / sqrt(d)
-    interference = torch.cos(phase)
-    return softmax(scores * interference) @ v`
-    }
-};
-
-// NAVIGATION
-const navigationStack = ['home'];
+// Global state
+let navigationHistory = [];
 let currentUser = null;
 
-function navigateTo(page, section = null) {
-    if (navigationStack[navigationStack.length - 1] !== page) {
-        navigationStack.push(page);
+// ============================================
+// INITIALIZATION
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+    initAuth();
+    initNavigation();
+    initChat();
+    initCommunity();
+    loadFeatureContent();
+    checkOAuthCallback();
+});
+
+// ============================================
+// AUTHENTICATION
+// ============================================
+function initAuth() {
+    // Check if user is logged in
+    const userStr = localStorage.getItem('qots_user');
+    if (userStr) {
+        try {
+            currentUser = JSON.parse(userStr);
+            updateUIForLoggedInUser();
+        } catch (e) {
+            localStorage.removeItem('qots_user');
+        }
+    }
+}
+
+function checkOAuthCallback() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('auth') === 'success') {
+        const userData = {
+            name: params.get('name'),
+            email: params.get('email'),
+            avatar: params.get('avatar')
+        };
+        localStorage.setItem('qots_user', JSON.stringify(userData));
+        currentUser = userData;
+        updateUIForLoggedInUser();
+        
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        showToast('Successfully signed in!', 'success');
+    }
+}
+
+function updateUIForLoggedInUser() {
+    const authBtn = document.getElementById('authBtn');
+    const userProfile = document.getElementById('userProfile');
+    
+    if (authBtn) authBtn.style.display = 'none';
+    if (userProfile) {
+        userProfile.style.display = 'block';
+        
+        const userInitial = document.getElementById('userInitial');
+        const userAvatarImg = document.getElementById('userAvatarImg');
+        
+        if (currentUser.avatar) {
+            userAvatarImg.src = currentUser.avatar;
+            userAvatarImg.style.display = 'block';
+            userInitial.style.display = 'none';
+        } else {
+            userInitial.textContent = currentUser.name ? currentUser.name[0].toUpperCase() : 'U';
+        }
     }
     
-    document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active'));
-    const targetPage = document.getElementById(`page-${page}`);
-    if (targetPage) targetPage.classList.add('active');
-    
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.remove('active');
-        if (link.dataset.page === page) link.classList.add('active');
+    // Show community create post forms
+    document.querySelectorAll('.create-post').forEach(el => {
+        el.style.display = 'block';
     });
     
+    // Hide auth prompts
+    const authPrompt = document.getElementById('communityAuthPrompt');
+    if (authPrompt) authPrompt.style.display = 'none';
+}
+
+function showAuthModal() {
+    const authPrompt = document.getElementById('communityAuthPrompt');
+    if (authPrompt) {
+        authPrompt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+function signInWithGoogle() {
+    window.location.href = '/api/auth/google';
+}
+
+function signInWithGitHub() {
+    window.location.href = '/api/auth/github';
+}
+
+function toggleUserDropdown() {
+    const dropdown = document.getElementById('userDropdown');
+    if (dropdown) {
+        dropdown.classList.toggle('active');
+    }
+}
+
+function logout() {
+    localStorage.removeItem('qots_user');
+    currentUser = null;
+    window.location.reload();
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
+function initNavigation() {
+    updateBreadcrumb();
+}
+
+function navigateTo(page, section) {
+    // Hide all pages
+    document.querySelectorAll('.page-container').forEach(p => {
+        p.classList.remove('active');
+    });
+    
+    // Show target page
+    const targetPage = document.getElementById(`page-${page}`);
+    if (targetPage) {
+        targetPage.classList.add('active');
+    }
+    
+    // Update active nav link
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+        if (link.dataset.page === page) {
+            link.classList.add('active');
+        }
+    });
+    
+    // Handle sections
+    if (section) {
+        if (page === 'features') {
+            loadFeatureSection(section);
+        }
+    }
+    
+    // Update history
+    navigationHistory.push({ page, section });
     updateBreadcrumb();
     
-    if (section && page === 'features') loadFeatureContent(section);
-    if (page === 'features' && !section) loadFeatureContent();
-    if (page === 'community') loadCommunityData();
-    
-    window.history.pushState({ page, section }, '', page === 'home' ? '/' : `/${page}`);
-    window.scrollTo(0, 0);
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function updateBreadcrumb() {
     const breadcrumb = document.getElementById('breadcrumb');
-    const content = document.getElementById('breadcrumbContent');
+    const breadcrumbContent = document.getElementById('breadcrumbContent');
     
-    if (navigationStack.length <= 1) {
+    if (navigationHistory.length > 0) {
+        breadcrumb.classList.add('visible');
+        let html = '<a href="#" class="breadcrumb-item" onclick="navigateTo(\'home\'); return false;">Home</a>';
+        
+        navigationHistory.forEach((nav, index) => {
+            html += ' <span class="breadcrumb-separator">/</span> ';
+            if (index === navigationHistory.length - 1) {
+                html += `<span class="breadcrumb-item current">${nav.page}</span>`;
+            } else {
+                html += `<a href="#" class="breadcrumb-item" onclick="navigateBack(${index}); return false;">${nav.page}</a>`;
+            }
+        });
+        
+        breadcrumbContent.innerHTML = html;
+    } else {
         breadcrumb.classList.remove('visible');
-        return;
     }
-    
-    breadcrumb.classList.add('visible');
-    content.innerHTML = navigationStack.map((page, i) => {
-        const isLast = i === navigationStack.length - 1;
-        const name = page.charAt(0).toUpperCase() + page.slice(1);
-        if (isLast) return `<span class="breadcrumb-item current">${name}</span>`;
-        return `<a href="#" class="breadcrumb-item" onclick="goBackTo(${i}); return false;">${name}</a><span class="breadcrumb-separator">›</span>`;
-    }).join('');
 }
 
-function goBackTo(index) {
-    const page = navigationStack[index];
-    navigationStack.length = index + 1;
-    navigateTo(page);
+function navigateBack(index) {
+    navigationHistory = navigationHistory.slice(0, index + 1);
+    const target = navigationHistory[navigationHistory.length - 1];
+    navigationHistory.pop(); // Remove it because navigateTo will add it back
+    navigateTo(target.page, target.section);
 }
 
-function loadFeatureContent(section) {
-    const container = document.getElementById('featureDetail');
-    if (!container) return;
+function toggleMobileMenu() {
+    // Add mobile menu implementation if needed
+    alert('Mobile menu - to be implemented');
+}
+
+// ============================================
+// FEATURES PAGE
+// ============================================
+function loadFeatureContent() {
+    const features = {
+        qpand: {
+            title: 'QPand State Vector',
+            icon: '🎯',
+            content: `
+                <div class="feature-section">
+                    <h3>17-Dimensional Motion Representation</h3>
+                    <p>The QPand state vector extends traditional tracking representations by capturing:</p>
+                    <ul class="arch-list">
+                        <li>Position (x, y) - 2D coordinates</li>
+                        <li>Velocity (vx, vy) - First-order dynamics</li>
+                        <li>Acceleration (ax, ay) - Second-order dynamics</li>
+                        <li>Curvature (κx, κy) - Path bending</li>
+                        <li>Jerk (jx, jy) - Acceleration rate of change</li>
+                        <li>Direction angle (θ) - Orientation</li>
+                        <li>Angular velocity (ω) - Rotation rate</li>
+                        <li>Arc length (s) - Path traveled</li>
+                        <li>Temporal momentum (pt) - Motion persistence</li>
+                        <li>Energy density (ρE) - Motion intensity</li>
+                    </ul>
+                    <p>This extended state representation enables Q-OTS to handle complex, nonlinear motion patterns that traditional trackers struggle with.</p>
+                </div>
+                <div class="feature-section">
+                    <h3>Mathematical Formulation</h3>
+                    <div class="code-block"><pre>q ∈ ℝ¹⁷ = [x, y, vx, vy, ax, ay, κx, κy, jx, jy, θ, ω, s, pt, ρE, μ, σ]
+
+Where:
+- Classical mechanics: position, velocity, acceleration
+- Differential geometry: curvature, arc length  
+- Thermodynamics: energy density, momentum
+- Uncertainty: mean μ, spread σ</pre></div>
+                </div>
+            `
+        },
+        boltzmann: {
+            title: 'Boltzmann Motion Field',
+            icon: '🌡️',
+            content: `
+                <div class="feature-section">
+                    <h3>Energy-Based Probability Modeling</h3>
+                    <p>Q-OTS uses statistical mechanics to model motion uncertainty. The Boltzmann distribution provides a principled way to assign probabilities based on motion energy:</p>
+                    <div class="code-block"><pre>P(q) ∝ exp(-E(q) / T)
+
+Where:
+- E(q): Total motion energy
+- T: Temperature parameter (controls uncertainty)
+- Higher T → More uncertain/exploratory
+- Lower T → More confident/deterministic</pre></div>
+                </div>
+                <div class="feature-section">
+                    <h3>Energy Components</h3>
+                    <p>The total energy combines multiple factors:</p>
+                    <ul class="arch-list">
+                        <li>Kinetic energy: ½m(vx² + vy²)</li>
+                        <li>Appearance energy: Feature mismatch cost</li>
+                        <li>Motion energy: Deviation from predicted trajectory</li>
+                        <li>Entropy: Shannon entropy for uncertainty</li>
+                    </ul>
+                </div>
+            `
+        },
+        bloch: {
+            title: 'Bloch Sphere Representation',
+            icon: '🔮',
+            content: `
+                <div class="feature-section">
+                    <h3>Quantum-Inspired Motion Encoding</h3>
+                    <p>The Bloch sphere maps 2D motion to a 3D quantum state representation, enabling multi-regime motion modeling:</p>
+                    <div class="code-block"><pre>|ψ⟩ = cos(θ/2)|0⟩ + e^(iφ)|sin(θ/2)|1⟩
+
+Spherical coordinates:
+- θ (polar): Encodes speed magnitude
+- φ (azimuthal): Encodes direction
+- r (radius): Encodes confidence (0 to 1)</pre></div>
+                </div>
+                <div class="feature-section">
+                    <h3>Motion Regimes</h3>
+                    <ul class="arch-list">
+                        <li>Linear motion: States near poles</li>
+                        <li>Curved motion: States on equator</li>
+                        <li>Erratic motion: States in interior</li>
+                        <li>Occlusion: Collapsed to origin</li>
+                    </ul>
+                </div>
+            `
+        },
+        wavepacket: {
+            title: 'Wavepacket Dynamics',
+            icon: '〰️',
+            content: `
+                <div class="feature-section">
+                    <h3>Localized Probability Distributions</h3>
+                    <p>Q-OTS uses Gaussian wavepackets to represent object locations with uncertainty:</p>
+                    <div class="code-block"><pre>Ψ(x,t) = (1/√(2πσ²)) exp(-(x-μ)²/2σ²) exp(ikx - iωt)
+
+Where:
+- μ: Mean position
+- σ: Uncertainty width (spreads over time)
+- k: Wave vector (momentum)
+- ω: Frequency (energy)</pre></div>
+                </div>
+                <div class="feature-section">
+                    <h3>Schrödinger-Inspired Evolution</h3>
+                    <p>The wavepacket evolves according to a modified Schrödinger equation:</p>
+                    <ul class="arch-list">
+                        <li>Spreads during occlusions</li>
+                        <li>Collapses upon re-detection</li>
+                        <li>Interferes with nearby objects</li>
+                        <li>Maintains coherence tracking</li>
+                    </ul>
+                </div>
+            `
+        },
+        neuralode: {
+            title: 'Neural ODEs',
+            icon: '🧠',
+            content: `
+                <div class="feature-section">
+                    <h3>Physics-Informed Learning</h3>
+                    <p>Neural Ordinary Differential Equations learn continuous-time dynamics:</p>
+                    <div class="code-block"><pre>dq/dt = f_θ(q, t)
+
+Where:
+- f_θ: Neural network with parameters θ
+- Learns nonlinear motion patterns
+- Respects physics constraints
+- Backprop through ODE solver</pre></div>
+                </div>
+                <div class="feature-section">
+                    <h3>Advantages</h3>
+                    <ul class="arch-list">
+                        <li>Continuous-time predictions</li>
+                        <li>Memory efficient</li>
+                        <li>Handles irregular time steps</li>
+                        <li>Physics-constrained learning</li>
+                    </ul>
+                </div>
+            `
+        },
+        attention: {
+            title: 'Quantum Attention',
+            icon: '⚡',
+            content: `
+                <div class="feature-section">
+                    <h3>Phase-Modulated Attention</h3>
+                    <p>Attention mechanisms inspired by quantum interference:</p>
+                    <div class="code-block"><pre>Attention(Q, K, V) = softmax((QK^T / √d_k) ⊙ e^(iφ)) V
+
+Where:
+- φ: Phase differences between queries and keys
+- Interference amplifies/suppresses attention
+- Enables context-aware feature extraction</pre></div>
+                </div>
+            `
+        }
+    };
     
-    if (!section) {
-        container.innerHTML = Object.values(FEATURE_CONTENT).map(f => `
-            <div class="feature-section">
-                <h3>${f.title}</h3>
-                ${f.content}
-                <div class="code-block"><pre>${f.code}</pre></div>
-            </div>
-        `).join('');
-        return;
-    }
+    window.loadedFeatures = features;
+}
+
+function loadFeatureSection(section) {
+    const featureDetail = document.getElementById('featureDetail');
+    const feature = window.loadedFeatures[section];
     
-    const content = FEATURE_CONTENT[section];
-    if (content) {
-        container.innerHTML = `
-            <div class="feature-section">
-                <h3>${content.title}</h3>
-                ${content.content}
-                <div class="code-block"><pre>${content.code}</pre></div>
+    if (feature && featureDetail) {
+        featureDetail.innerHTML = `
+            <div class="feature-detail-header">
+                <div class="feature-icon" style="font-size: 3rem;">${feature.icon}</div>
+                <h2>${feature.title}</h2>
             </div>
+            ${feature.content}
         `;
     }
 }
 
-window.addEventListener('popstate', (e) => {
-    if (e.state?.page) navigateTo(e.state.page, e.state.section);
-});
-
-// CHAT
-let chatHistory = [];
-
-function toggleChat() {
-    document.getElementById('chatToggle').classList.toggle('active');
-    document.getElementById('chatWindow').classList.toggle('active');
+// ============================================
+// COMMUNITY
+// ============================================
+function initCommunity() {
+    loadCommunityPosts();
 }
 
-function handleChatKeypress(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
+function showCommunitySection(section) {
+    document.querySelectorAll('.community-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.section === section) {
+            tab.classList.add('active');
+        }
+    });
+    
+    document.querySelectorAll('.community-section').forEach(sec => {
+        sec.classList.remove('active');
+    });
+    
+    const targetSection = document.getElementById(`section-${section}`);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+}
+
+async function loadCommunityPosts() {
+    try {
+        const response = await fetch('/api/community/posts');
+        if (response.ok) {
+            const posts = await response.json();
+            renderPosts(posts);
+        }
+    } catch (error) {
+        console.error('Error loading posts:', error);
+    }
+}
+
+function renderPosts(posts) {
+    const discussionsList = document.getElementById('discussionsList');
+    const questionsList = document.getElementById('questionsList');
+    const showcaseList = document.getElementById('showcaseList');
+    
+    if (!posts || posts.length === 0) {
+        const emptyHTML = '<div class="post-card"><p>No posts yet. Be the first to contribute!</p></div>';
+        if (discussionsList) discussionsList.innerHTML = emptyHTML;
+        if (questionsList) questionsList.innerHTML = emptyHTML;
+        if (showcaseList) showcaseList.innerHTML = emptyHTML;
+        return;
+    }
+    
+    // Render posts (simplified version)
+    posts.forEach(post => {
+        const postHTML = `
+            <div class="post-card">
+                <div class="post-header">
+                    <div class="post-avatar">${post.author[0]}</div>
+                    <div class="post-meta">
+                        <h4>${post.author}</h4>
+                        <span>${new Date(post.created_at).toLocaleDateString()}</span>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <h3>${post.title}</h3>
+                    <p>${post.content}</p>
+                </div>
+                <div class="post-footer">
+                    <button class="post-action">💬 ${post.replies || 0} replies</button>
+                    <button class="post-action">👍 ${post.likes || 0} likes</button>
+                </div>
+            </div>
+        `;
+        
+        // Add to appropriate list based on post type
+        if (post.type === 'discussion' && discussionsList) {
+            discussionsList.innerHTML += postHTML;
+        } else if (post.type === 'question' && questionsList) {
+            questionsList.innerHTML += postHTML;
+        } else if (post.type === 'showcase' && showcaseList) {
+            showcaseList.innerHTML += postHTML;
+        }
+    });
+}
+
+async function createPost(type, event) {
+    event.preventDefault();
+    
+    if (!currentUser) {
+        showToast('Please sign in to post', 'error');
+        return;
+    }
+    
+    let title, content;
+    if (type === 'discussion') {
+        title = document.getElementById('discussionTitle').value;
+        content = document.getElementById('discussionContent').value;
+    } else if (type === 'question') {
+        title = document.getElementById('questionTitle').value;
+        content = document.getElementById('questionContent').value;
+    } else if (type === 'showcase') {
+        title = document.getElementById('showcaseTitle').value;
+        content = document.getElementById('showcaseContent').value;
+    }
+    
+    try {
+        const response = await fetch('/api/community/posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type,
+                title,
+                content,
+                author: currentUser.name,
+                author_email: currentUser.email
+            })
+        });
+        
+        if (response.ok) {
+            showToast('Posted successfully!', 'success');
+            event.target.reset();
+            loadCommunityPosts();
+        } else {
+            showToast('Failed to post', 'error');
+        }
+    } catch (error) {
+        console.error('Error creating post:', error);
+        showToast('Error creating post', 'error');
+    }
+}
+
+// ============================================
+// CONTACT FORM
+// ============================================
+async function submitContactForm(event) {
+    event.preventDefault();
+    
+    const submitBtn = document.getElementById('contactSubmitBtn');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Sending...';
+    submitBtn.disabled = true;
+    
+    const data = {
+        name: document.getElementById('contactName').value,
+        email: document.getElementById('contactEmail').value,
+        subject: document.getElementById('contactSubject').value,
+        message: document.getElementById('contactMessage').value
+    };
+    
+    try {
+        const response = await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            showToast('Message sent successfully!', 'success');
+            event.target.reset();
+        } else {
+            showToast('Failed to send message', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error sending message', 'error');
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+// ============================================
+// CHAT
+// ============================================
+function initChat() {
+    const chatInput = document.getElementById('chatInput');
+    if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    }
+}
+
+function toggleChat() {
+    const chatWindow = document.getElementById('chatWindow');
+    const chatToggle = document.getElementById('chatToggle');
+    
+    if (chatWindow && chatToggle) {
+        chatWindow.classList.toggle('active');
+        chatToggle.classList.toggle('active');
+    }
+}
+
+function handleChatKeypress(event) {
+    if (event.key === 'Enter') {
         sendMessage();
     }
 }
 
 async function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
+    const chatInput = document.getElementById('chatInput');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatSend = document.getElementById('chatSend');
+    
+    const message = chatInput.value.trim();
     if (!message) return;
     
-    addChatMessage(message, 'user');
-    input.value = '';
-    chatHistory.push({ role: 'user', content: message });
-    showTyping();
+    // Add user message
+    const userMsgDiv = document.createElement('div');
+    userMsgDiv.className = 'chat-message user';
+    userMsgDiv.textContent = message;
+    chatMessages.appendChild(userMsgDiv);
+    
+    chatInput.value = '';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Show typing indicator
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'chat-message bot typing';
+    typingDiv.id = 'typing-indicator';
+    typingDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+    chatMessages.appendChild(typingDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    chatSend.disabled = true;
     
     try {
-        const localResponse = searchLocalKnowledge(message);
-        
-        if (localResponse.confidence > 0.6) {
-            hideTyping();
-            addChatMessage(localResponse.answer, 'bot');
-            chatHistory.push({ role: 'assistant', content: localResponse.answer });
-            return;
-        }
-        
-        const response = await fetch('/api/chat', {
+        const response = await fetch(CONFIG.DEEPSEEK_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, history: chatHistory.slice(-10) })
+            body: JSON.stringify({ message })
         });
         
         const data = await response.json();
-        hideTyping();
         
-        const reply = data.response || localResponse.answer || "I can help with Q-OTS questions!";
-        addChatMessage(reply, 'bot');
-        chatHistory.push({ role: 'assistant', content: reply });
+        // Remove typing indicator
+        const typing = document.getElementById('typing-indicator');
+        if (typing) typing.remove();
+        
+        // Add bot response
+        const botMsgDiv = document.createElement('div');
+        botMsgDiv.className = 'chat-message bot';
+        botMsgDiv.textContent = data.response || 'Sorry, I encountered an error.';
+        chatMessages.appendChild(botMsgDiv);
+        
     } catch (error) {
-        hideTyping();
-        const fallback = searchLocalKnowledge(message);
-        addChatMessage(fallback.answer, 'bot');
-    }
-}
-
-function searchLocalKnowledge(query) {
-    const q = query.toLowerCase();
-    let best = { answer: null, confidence: 0 };
-    
-    for (const [key, concept] of Object.entries(QSORT_KNOWLEDGE.concepts)) {
-        if (q.includes(key) || q.includes(key.replace('_', ' '))) {
-            return {
-                answer: `**${concept.definition}**\n\n${concept.formula ? `Formula: \`${concept.formula}\`\n\n` : ''}${concept.importance}`,
-                confidence: 0.9
-            };
-        }
-    }
-    
-    for (const [key, comparison] of Object.entries(QSORT_KNOWLEDGE.comparisons)) {
-        if (q.includes('vs') || q.includes('compare') || q.includes('difference')) {
-            const parts = key.split('_vs_');
-            if (parts.some(p => q.includes(p))) {
-                return { answer: comparison, confidence: 0.85 };
-            }
-        }
-    }
-    
-    if (q.includes('formula') || q.includes('equation')) {
-        for (const [name, formula] of Object.entries(QSORT_KNOWLEDGE.formulas)) {
-            if (q.includes(name.replace('_', ' '))) {
-                return { answer: `The formula for ${name.replace('_', ' ')} is:\n\n\`${formula}\``, confidence: 0.9 };
-            }
-        }
-    }
-    
-    return {
-        answer: "I can help with Q-OTS! Ask about:\n• **QPand** - 17-dim state vector\n• **Boltzmann Field** - energy-based probability\n• **Bloch Sphere** - quantum motion encoding\n• **Wavepackets** - uncertainty dynamics\n• **Neural ODEs** - physics-informed learning\n• Compare Q-OTS vs SORT/DeepSORT/ByteTrack",
-        confidence: 0.3
-    };
-}
-
-function addChatMessage(text, type) {
-    const container = document.getElementById('chatMessages');
-    const msg = document.createElement('div');
-    msg.className = `chat-message ${type}`;
-    msg.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/`(.*?)`/g, '<code>$1</code>').replace(/\n/g, '<br>');
-    container.appendChild(msg);
-    container.scrollTop = container.scrollHeight;
-}
-
-function showTyping() {
-    const container = document.getElementById('chatMessages');
-    const typing = document.createElement('div');
-    typing.className = 'chat-message bot typing';
-    typing.id = 'typingIndicator';
-    typing.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-    container.appendChild(typing);
-    container.scrollTop = container.scrollHeight;
-}
-
-function hideTyping() {
-    document.getElementById('typingIndicator')?.remove();
-}
-
-// COMMUNITY
-function showCommunitySection(section) {
-    document.querySelectorAll('.community-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.section === section));
-    document.querySelectorAll('.community-section').forEach(sec => sec.classList.toggle('active', sec.id === `section-${section}`));
-}
-
-async function loadCommunityData() {
-    try {
-        const [discussions, questions, showcase] = await Promise.all([
-            fetch('/api/community/posts?type=discussion').then(r => r.json()).catch(() => ({ posts: [] })),
-            fetch('/api/community/posts?type=question').then(r => r.json()).catch(() => ({ posts: [] })),
-            fetch('/api/community/posts?type=showcase').then(r => r.json()).catch(() => ({ posts: [] }))
-        ]);
+        console.error('Chat error:', error);
+        const typing = document.getElementById('typing-indicator');
+        if (typing) typing.remove();
         
-        renderPosts(discussions.posts || [], 'discussionsList');
-        renderPosts(questions.posts || [], 'questionsList');
-        renderPosts(showcase.posts || [], 'showcaseList');
-    } catch (e) {
-        renderSampleData();
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'chat-message bot';
+        errorDiv.textContent = 'Sorry, I encountered an error. Please try again.';
+        chatMessages.appendChild(errorDiv);
+    } finally {
+        chatSend.disabled = false;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 }
 
-function renderPosts(posts, containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    
-    if (posts.length === 0) {
-        container.innerHTML = '<p style="text-align:center;color:var(--text-dim);padding:2rem;">No posts yet. Be the first!</p>';
-        return;
-    }
-    
-    container.innerHTML = posts.map(post => `
-        <div class="post-card">
-            <div class="post-header">
-                <div class="post-avatar">${post.author_avatar ? `<img src="${post.author_avatar}">` : (post.author_name?.charAt(0) || 'U')}</div>
-                <div class="post-meta"><h4>${post.author_name || 'Anonymous'}</h4><span>${formatDate(post.created_at)}</span></div>
-            </div>
-            <div class="post-content"><h3>${post.title}</h3><p>${(post.content || '').substring(0, 200)}${post.content?.length > 200 ? '...' : ''}</p></div>
-            <div class="post-footer">
-                <button class="post-action">❤️ ${post.likes || 0}</button>
-                <button class="post-action">💬 ${post.comments || 0}</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function renderSampleData() {
-    const sample = [
-        { id: '1', title: 'Welcome to Q-OTS Community!', content: 'Share ideas, ask questions, collaborate on quantum-inspired tracking!', author_name: 'Q-OTS Team', created_at: new Date().toISOString(), likes: 42, comments: 12 },
-        { id: '2', title: 'Neural ODE Training Tips', content: 'Cosine annealing learning rate works best for motion ODE...', author_name: 'Researcher', created_at: new Date(Date.now() - 86400000).toISOString(), likes: 18, comments: 7 }
-    ];
-    renderPosts(sample, 'discussionsList');
-    renderPosts([{ id: '3', title: 'How to handle fast-moving objects?', content: 'Tips for sports tracking with Q-OTS?', author_name: 'Developer', created_at: new Date().toISOString(), likes: 8, comments: 5 }], 'questionsList');
-    renderPosts([{ id: '4', title: 'Q-OTS Cell Tracker', content: 'Applied to microscopy - wavepackets help during mitosis!', author_name: 'BioResearcher', created_at: new Date().toISOString(), likes: 31, comments: 9 }], 'showcaseList');
-}
-
-async function createPost(type, event) {
-    event.preventDefault();
-    if (!currentUser) { showToast('Please sign in', 'error'); return; }
-    
-    const ids = { discussion: ['discussionTitle', 'discussionContent'], question: ['questionTitle', 'questionContent'], showcase: ['showcaseTitle', 'showcaseContent'] };
-    const [titleId, contentId] = ids[type];
-    
-    try {
-        await fetch('/api/community/posts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type,
-                title: document.getElementById(titleId).value,
-                content: document.getElementById(contentId).value,
-                author_id: currentUser.id,
-                author_name: currentUser.name,
-                author_avatar: currentUser.avatar
-            })
-        });
-        showToast('Posted!', 'success');
-        loadCommunityData();
-        document.getElementById(titleId).value = '';
-        document.getElementById(contentId).value = '';
-    } catch (e) {
-        showToast('Error posting', 'error');
-    }
-}
-
-function formatDate(d) {
-    const diff = Date.now() - new Date(d);
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
-    return `${Math.floor(diff/86400000)}d ago`;
-}
-
-// AUTH
-function showAuthModal() { navigateTo('community'); }
-function signInWithGoogle() { window.location.href = '/api/auth/google'; }
-function signInWithGitHub() { window.location.href = '/api/auth/github'; }
-
-function logout() {
-    currentUser = null;
-    localStorage.removeItem('qots_user');
-    updateAuthUI();
-    showToast('Signed out', 'success');
-}
-
-function updateAuthUI() {
-    const authBtn = document.getElementById('authBtn');
-    const userProfile = document.getElementById('userProfile');
-    const authPrompt = document.getElementById('communityAuthPrompt');
-    
-    if (currentUser) {
-        authBtn.style.display = 'none';
-        userProfile.style.display = 'block';
-        const avatarImg = document.getElementById('userAvatarImg');
-        const userInitial = document.getElementById('userInitial');
-        if (currentUser.avatar) {
-            avatarImg.src = currentUser.avatar;
-            avatarImg.style.display = 'block';
-            userInitial.style.display = 'none';
-        } else {
-            userInitial.textContent = currentUser.name?.charAt(0) || 'U';
-        }
-        if (authPrompt) authPrompt.style.display = 'none';
-        document.querySelectorAll('.create-post').forEach(el => el.style.display = 'block');
-    } else {
-        authBtn.style.display = 'block';
-        userProfile.style.display = 'none';
-        if (authPrompt) authPrompt.style.display = 'block';
-        document.querySelectorAll('.create-post').forEach(el => el.style.display = 'none');
-    }
-}
-
-function toggleUserDropdown() {
-    document.getElementById('userDropdown')?.classList.toggle('active');
-}
-
-// CONTACT
-async function submitContactForm(event) {
-    event.preventDefault();
-    const btn = document.getElementById('contactSubmitBtn');
-    btn.disabled = true;
-    btn.textContent = 'Sending...';
-    
-    try {
-        await fetch('/api/contact', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name: document.getElementById('contactName').value,
-                email: document.getElementById('contactEmail').value,
-                subject: document.getElementById('contactSubject').value,
-                message: document.getElementById('contactMessage').value
-            })
-        });
-        showToast('Message sent!', 'success');
-        ['contactName', 'contactEmail', 'contactSubject', 'contactMessage'].forEach(id => document.getElementById(id).value = '');
-    } catch (e) {
-        showToast('Error sending', 'error');
-    }
-    
-    btn.disabled = false;
-    btn.textContent = 'Send Message →';
-}
-
-// UTILS
+// ============================================
+// UTILITY
+// ============================================
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.innerHTML = `${type === 'success' ? '✓' : '✕'} ${message}`;
+    toast.innerHTML = `
+        <span>${type === 'success' ? '✓' : '✕'}</span>
+        <span>${message}</span>
+    `;
+    
     container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
 }
 
-function toggleMobileMenu() {
-    const navLinks = document.querySelector('.nav-links');
-    navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
-}
-
-// INIT
-document.addEventListener('DOMContentLoaded', () => {
-    const savedUser = localStorage.getItem('qots_user');
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        updateAuthUI();
-    }
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('auth_success')) {
-        const userData = urlParams.get('user');
-        if (userData) {
-            currentUser = JSON.parse(decodeURIComponent(userData));
-            localStorage.setItem('qots_user', JSON.stringify(currentUser));
-            updateAuthUI();
-            showToast('Signed in!', 'success');
-        }
-        window.history.replaceState({}, '', window.location.pathname);
-    }
-    
-    const path = window.location.pathname.slice(1);
-    if (path && ['features', 'community', 'contact'].includes(path)) {
-        navigateTo(path);
-    }
-    
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.user-profile')) {
-            document.getElementById('userDropdown')?.classList.remove('active');
-        }
-    });
-});
+// Make functions globally available
+window.navigateTo = navigateTo;
+window.navigateBack = navigateBack;
+window.toggleMobileMenu = toggleMobileMenu;
+window.showAuthModal = showAuthModal;
+window.signInWithGoogle = signInWithGoogle;
+window.signInWithGitHub = signInWithGitHub;
+window.toggleUserDropdown = toggleUserDropdown;
+window.logout = logout;
+window.showCommunitySection = showCommunitySection;
+window.createPost = createPost;
+window.submitContactForm = submitContactForm;
+window.toggleChat = toggleChat;
+window.handleChatKeypress = handleChatKeypress;
+window.sendMessage = sendMessage;
