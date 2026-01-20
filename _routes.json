@@ -4,11 +4,16 @@
     "/api/*"
   ],
   "exclude": [
+    "/index.html",
+    "/chat.js",
+    "/styles.css",
+    "/Qsort.pdf",
     "/*.css",
     "/*.js",
     "/*.html",
     "/*.pdf",
-    "/favicon.ico",
-    "/Qsort.pdf"
+    "/*.png",
+    "/*.jpg",
+    "/*.ico"
   ]
 }
