@@ -1,83 +1,56 @@
 // functions/api/auth/github.js
-// GitHub OAuth Handler for Q-OTS
-// Handles both redirect to GitHub and callback from GitHub
+// FIXED GitHub OAuth Handler - Redirects to homepage properly
 
 export async function onRequestGet(context) {
     const { env, request } = context;
     const url = new URL(request.url);
     
-    console.log('🔐 GitHub OAuth Request:', url.pathname);
+    // Get the base site URL (homepage)
+    const siteUrl = env.SITE_URL || url.origin;
     
-    // Check if this is a callback from GitHub (has 'code' parameter)
+    console.log('🔐 GitHub OAuth - URL:', url.pathname);
+    
     const code = url.searchParams.get('code');
     const error = url.searchParams.get('error');
     
     // Handle error from GitHub
     if (error) {
-        console.error('❌ GitHub OAuth Error:', error);
-        const redirectUrl = new URL(env.SITE_URL || url.origin);
-        redirectUrl.searchParams.set('auth', 'error');
-        redirectUrl.searchParams.set('message', error);
-        return Response.redirect(redirectUrl.toString(), 302);
+        console.error('❌ GitHub Error:', error);
+        return Response.redirect(`${siteUrl}?auth=error&message=${error}`, 302);
     }
     
-    // If no code, redirect to GitHub OAuth
+    // If no code, redirect to GitHub
     if (!code) {
-        return redirectToGitHub(env, url);
+        const clientId = env.GITHUB_CLIENT_ID;
+        if (!clientId) {
+            console.error('❌ GITHUB_CLIENT_ID not set');
+            return Response.redirect(`${siteUrl}?auth=error&message=GitHub+not+configured`, 302);
+        }
+        
+        const redirectUri = `${siteUrl}/api/auth/github`;
+        const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
+        githubAuthUrl.searchParams.set('client_id', clientId);
+        githubAuthUrl.searchParams.set('redirect_uri', redirectUri);
+        githubAuthUrl.searchParams.set('scope', 'read:user user:email');
+        
+        console.log('➡️  Redirecting to GitHub');
+        console.log('   Redirect URI:', redirectUri);
+        return Response.redirect(githubAuthUrl.toString(), 302);
     }
     
-    // If we have code, exchange it for tokens
-    return handleCallback(env, code, url);
-}
-
-// Redirect user to GitHub OAuth authorization
-function redirectToGitHub(env, originalUrl) {
-    const clientId = env.GITHUB_CLIENT_ID;
-    const siteUrl = env.SITE_URL || originalUrl.origin;
-    const redirectUri = `${siteUrl}/api/auth/github`;
+    // Exchange code for token
+    console.log('🔄 Processing callback with code');
     
-    if (!clientId) {
-        console.error('❌ GITHUB_CLIENT_ID not set in environment');
-        const errorUrl = new URL(siteUrl);
-        errorUrl.searchParams.set('auth', 'error');
-        errorUrl.searchParams.set('message', 'GitHub OAuth not configured');
-        return Response.redirect(errorUrl.toString(), 302);
-    }
-    
-    // Build GitHub OAuth URL
-    const githubAuthUrl = new URL('https://github.com/login/oauth/authorize');
-    githubAuthUrl.searchParams.set('client_id', clientId);
-    githubAuthUrl.searchParams.set('redirect_uri', redirectUri);
-    githubAuthUrl.searchParams.set('scope', 'read:user user:email');
-    githubAuthUrl.searchParams.set('allow_signup', 'true');
-    
-    console.log('➡️  Redirecting to GitHub OAuth');
-    console.log('   Client ID:', clientId);
-    console.log('   Redirect URI:', redirectUri);
-    
-    return Response.redirect(githubAuthUrl.toString(), 302);
-}
-
-// Handle callback from GitHub
-async function handleCallback(env, code, originalUrl) {
     const clientId = env.GITHUB_CLIENT_ID;
     const clientSecret = env.GITHUB_CLIENT_SECRET;
-    const siteUrl = env.SITE_URL || originalUrl.origin;
-    const redirectUri = `${siteUrl}/api/auth/github`;
-    
-    console.log('🔄 Processing GitHub OAuth callback');
     
     if (!clientId || !clientSecret) {
-        console.error('❌ GitHub OAuth credentials not configured');
-        const errorUrl = new URL(siteUrl);
-        errorUrl.searchParams.set('auth', 'error');
-        errorUrl.searchParams.set('message', 'Server configuration error');
-        return Response.redirect(errorUrl.toString(), 302);
+        console.error('❌ GitHub credentials not configured');
+        return Response.redirect(`${siteUrl}?auth=error&message=Server+configuration+error`, 302);
     }
     
     try {
         // Exchange code for access token
-        console.log('🔄 Exchanging code for token...');
         const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
             method: 'POST',
             headers: {
@@ -87,36 +60,22 @@ async function handleCallback(env, code, originalUrl) {
             body: JSON.stringify({
                 client_id: clientId,
                 client_secret: clientSecret,
-                code: code,
-                redirect_uri: redirectUri
+                code: code
             })
         });
         
         if (!tokenResponse.ok) {
-            const errorText = await tokenResponse.text();
-            console.error('❌ Token exchange failed:', tokenResponse.status, errorText);
-            
-            const errorUrl = new URL(siteUrl);
-            errorUrl.searchParams.set('auth', 'error');
-            errorUrl.searchParams.set('message', 'Failed to authenticate with GitHub');
-            return Response.redirect(errorUrl.toString(), 302);
+            throw new Error(`Token exchange failed: ${tokenResponse.status}`);
         }
         
         const tokenData = await tokenResponse.json();
         
         if (tokenData.error) {
-            console.error('❌ GitHub returned error:', tokenData.error_description);
-            
-            const errorUrl = new URL(siteUrl);
-            errorUrl.searchParams.set('auth', 'error');
-            errorUrl.searchParams.set('message', tokenData.error_description || 'GitHub authentication failed');
-            return Response.redirect(errorUrl.toString(), 302);
+            console.error('❌ Token error:', tokenData.error_description);
+            return Response.redirect(`${siteUrl}?auth=error&message=${encodeURIComponent(tokenData.error_description)}`, 302);
         }
         
-        console.log('✅ Token received');
-        
-        // Get user info from GitHub
-        console.log('🔄 Fetching user info...');
+        // Get user info
         const userResponse = await fetch('https://api.github.com/user', {
             headers: {
                 'Authorization': `Bearer ${tokenData.access_token}`,
@@ -126,20 +85,14 @@ async function handleCallback(env, code, originalUrl) {
         });
         
         if (!userResponse.ok) {
-            console.error('❌ Failed to get user info:', userResponse.status);
-            
-            const errorUrl = new URL(siteUrl);
-            errorUrl.searchParams.set('auth', 'error');
-            errorUrl.searchParams.set('message', 'Failed to get user information');
-            return Response.redirect(errorUrl.toString(), 302);
+            throw new Error('Failed to get user info');
         }
         
         const userData = await userResponse.json();
         
-        // Get user email if not public
-        let email = userData.email;
+        // Get email if not public
+        let email = userData.email || '';
         if (!email) {
-            console.log('🔄 Fetching user email...');
             const emailResponse = await fetch('https://api.github.com/user/emails', {
                 headers: {
                     'Authorization': `Bearer ${tokenData.access_token}`,
@@ -157,33 +110,18 @@ async function handleCallback(env, code, originalUrl) {
         
         console.log('✅ User authenticated:', userData.login);
         
-        // Redirect back to site with user data
-        const successUrl = new URL(siteUrl);
+        // Redirect to HOMEPAGE (not to /api/auth/github/callback!)
+        const successUrl = new URL(siteUrl); // This is just the homepage!
         successUrl.searchParams.set('auth', 'success');
         successUrl.searchParams.set('name', userData.name || userData.login);
-        successUrl.searchParams.set('email', email || '');
+        successUrl.searchParams.set('email', email);
         successUrl.searchParams.set('avatar', userData.avatar_url || '');
         
-        console.log('✅ Redirecting to site with user data');
+        console.log('➡️  Redirecting to homepage:', successUrl.toString());
         return Response.redirect(successUrl.toString(), 302);
         
     } catch (error) {
         console.error('❌ OAuth error:', error);
-        
-        const errorUrl = new URL(siteUrl);
-        errorUrl.searchParams.set('auth', 'error');
-        errorUrl.searchParams.set('message', 'Authentication failed');
-        return Response.redirect(errorUrl.toString(), 302);
+        return Response.redirect(`${siteUrl}?auth=error&message=Authentication+failed`, 302);
     }
-}
-
-// Handle OPTIONS for CORS
-export async function onRequestOptions() {
-    return new Response(null, {
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type'
-        }
-    });
 }
