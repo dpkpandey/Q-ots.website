@@ -99,6 +99,7 @@ body {
     color: var(--text-primary);
 }
 
+/* UPDATED (only for logo image support; keeps same size/shape) */
 .logo-icon {
     width: 40px; height: 40px;
     background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
@@ -106,10 +107,35 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+/* NEW: logo image */
+.logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    image-rendering: -webkit-optimize-contrast;
+    transform: translateZ(0);
+}
+
+/* NEW: fallback text (matches original "Q" look) */
+.logo-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-family: 'JetBrains Mono', monospace;
     font-weight: 700;
     font-size: 1.2rem;
+    color: var(--bg-deep);
 }
+
+/* Hide fallback when image is confirmed loaded */
+.logo-icon.has-image .logo-fallback { display: none; }
 
 .logo-text {
     font-family: 'Space Grotesk', sans-serif;
@@ -1181,7 +1207,19 @@ body {
     <nav class="nav">
         <div class="nav-content">
             <a href="#" class="logo" onclick="navigateTo('home'); return false;">
-                <div class="logo-icon">Q</div>
+                <!-- UPDATED: logo uses /static/qots.png with fallback "Q" -->
+                <div class="logo-icon" id="logoIcon">
+                    <img
+                        class="logo-img"
+                        src="/static/qots.png"
+                        alt="Q-OTS Logo"
+                        loading="eager"
+                        decoding="async"
+                        onload="document.getElementById('logoIcon')?.classList.add('has-image')"
+                        onerror="this.style.display='none';"
+                    />
+                    <div class="logo-fallback">Q</div>
+                </div>
                 <span class="logo-text">Q-OTS</span>
             </a>
             <div class="nav-links">
@@ -1449,7 +1487,22 @@ body {
         <div class="footer-content">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <a href="#" class="logo" onclick="navigateTo('home'); return false;"><div class="logo-icon">Q</div><span class="logo-text">Q-OTS</span></a>
+                    <a href="#" class="logo" onclick="navigateTo('home'); return false;">
+                        <!-- UPDATED: footer logo uses /static/qots.png with fallback "Q" -->
+                        <div class="logo-icon" id="logoIconFooter">
+                            <img
+                                class="logo-img"
+                                src="/static/qots.png"
+                                alt="Q-OTS Logo"
+                                loading="lazy"
+                                decoding="async"
+                                onload="document.getElementById('logoIconFooter')?.classList.add('has-image')"
+                                onerror="this.style.display='none';"
+                            />
+                            <div class="logo-fallback">Q</div>
+                        </div>
+                        <span class="logo-text">Q-OTS</span>
+                    </a>
                     <p>A physics-grounded approach to multi-object tracking.</p>
                 </div>
                 <div class="footer-links"><h4>Documentation</h4><ul><li><a href="Qsort.pdf" target="_blank">Research Paper</a></li><li><a href="#" onclick="navigateTo('features'); return false;">Architecture</a></li></ul></div>
