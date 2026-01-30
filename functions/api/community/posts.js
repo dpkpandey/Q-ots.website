@@ -6,17 +6,16 @@ export async function onRequestGet({ request, env }) {
   const type = url.searchParams.get('type') || 'discussion';
   
   try {
-    // Return mock data for now since database might not have posts yet
+    // Mock data for demo
     const mockPosts = {
       discussion: [
         {
           id: 1,
-          user_id: 'demo',
-          author: 'Demo User',
+          author: 'Research Team',
           avatar: '',
           time: '2 hours ago',
           title: 'Welcome to Q-OTS Community',
-          content: 'This is a demo discussion post. Sign in to create your own posts!',
+          content: 'This is a demo discussion post. Sign in to create your own posts and join the conversation!',
           likes: 5,
           comments: 2
         }
@@ -24,12 +23,11 @@ export async function onRequestGet({ request, env }) {
       question: [
         {
           id: 2,
-          user_id: 'demo',
-          author: 'Demo User',
+          author: 'Curious Researcher',
           avatar: '',
           time: '3 hours ago',
-          title: 'How does QPand state vector work?',
-          content: 'Can someone explain the 17-dimensional QPand representation?',
+          title: 'How does the QPand state vector work?',
+          content: 'Can someone explain the 17-dimensional QPand representation in more detail?',
           likes: 8,
           comments: 4
         }
@@ -37,27 +35,42 @@ export async function onRequestGet({ request, env }) {
       showcase: [
         {
           id: 3,
-          user_id: 'demo',
-          author: 'Demo User',
+          author: 'Developer',
           avatar: '',
           time: '1 day ago',
           title: 'My Q-OTS Implementation',
-          content: 'Check out my implementation of the Boltzmann field!',
+          content: 'Check out my implementation of the Boltzmann field tracking!',
           likes: 12,
           comments: 6
         }
       ]
     };
     
-    // If database is available, try to get real posts
+    // Try to get real posts from database
     if (env.DB) {
       try {
         const result = await env.DB.prepare(`
-          SELECT * FROM posts WHERE type = ? ORDER BY created_at DESC LIMIT 10
+          SELECT 
+            p.*,
+            u.name as author,
+            u.avatar,
+            (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as likes,
+            (SELECT COUNT(*) FROM comments WHERE post_id = p.id) as comments
+          FROM posts p
+          LEFT JOIN users u ON p.user_id = u.id
+          WHERE p.type = ?
+          ORDER BY p.created_at DESC
+          LIMIT 20
         `).bind(type).all();
         
         if (result.results && result.results.length > 0) {
-          return new Response(JSON.stringify(result.results), {
+          // Format time
+          const posts = result.results.map(post => ({
+            ...post,
+            time: formatTime(post.created_at)
+          }));
+          
+          return new Response(JSON.stringify(posts), {
             status: 200,
             headers: {
               'Content-Type': 'application/json',
@@ -66,12 +79,12 @@ export async function onRequestGet({ request, env }) {
           });
         }
       } catch (dbError) {
-        console.error('Database error (using mock data):', dbError);
+        console.error('Database error:', dbError);
       }
     }
     
     // Return mock data
-    return new Response(JSON.stringify(mockPosts[type] || mockPosts.discussion), {
+    return new Response(JSON.stringify(mockPosts[type] || []), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
@@ -82,7 +95,7 @@ export async function onRequestGet({ request, env }) {
   } catch (error) {
     console.error('Posts API error:', error);
     
-    // Return empty array instead of error
+    // Return empty array on error
     return new Response(JSON.stringify([]), {
       status: 200,
       headers: {
@@ -110,31 +123,42 @@ export async function onRequestPost({ request, env }) {
     
     const userData = JSON.parse(decodeURIComponent(userDataCookie.split('=')[1]));
     
-    // Store in database if available
+    // Store in database
     if (env.DB) {
-      const result = await env.DB.prepare(`
-        INSERT INTO posts (user_id, type, title, content, category, tags, url)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        userData.userId,
-        data.type,
-        data.title,
-        data.content,
-        data.category || null,
-        data.tags || null,
-        data.url || null
-      ).run();
-      
-      return new Response(JSON.stringify({ success: true, id: result.meta.last_row_id }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
+      try {
+        const result = await env.DB.prepare(`
+          INSERT INTO posts (user_id, type, title, content, category, tags, url, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        `).bind(
+          userData.userId,
+          data.type,
+          data.title,
+          data.content,
+          data.category || null,
+          data.tags || null,
+          data.url || null
+        ).run();
+        
+        return new Response(JSON.stringify({ 
+          success: true, 
+          id: result.meta.last_row_id 
+        }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        throw dbError;
+      }
     }
     
-    return new Response(JSON.stringify({ success: true, message: 'Post created' }), {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: 'Post created (database not available)' 
+    }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
@@ -151,7 +175,6 @@ export async function onRequestPost({ request, env }) {
   }
 }
 
-// Handle OPTIONS for CORS
 export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
@@ -162,4 +185,19 @@ export async function onRequestOptions() {
       'Access-Control-Max-Age': '86400'
     }
   });
+}
+
+// Helper function to format time
+function formatTime(timestamp) {
+  if (!timestamp) return 'Just now';
+  
+  const now = new Date();
+  const then = new Date(timestamp);
+  const diff = Math.floor((now - then) / 1000); // seconds
+  
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)} days ago`;
+  return `${Math.floor(diff / 604800)} weeks ago`;
 }
