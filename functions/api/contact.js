@@ -1,5 +1,5 @@
 // functions/api/contact.js
-// Contact form submission handler
+// Contact form API handler
 
 export async function onRequestPost({ request, env }) {
   try {
@@ -13,35 +13,12 @@ export async function onRequestPost({ request, env }) {
       });
     }
     
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
-      return new Response(JSON.stringify({ error: 'Invalid email format' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-    
     // Store in database
     if (env.DB) {
       try {
-        // Create table if doesn't exist
         await env.DB.prepare(`
-          CREATE TABLE IF NOT EXISTS contacts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL,
-            subject TEXT NOT NULL,
-            message TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            status TEXT DEFAULT 'new'
-          )
-        `).run();
-        
-        // Insert contact submission
-        await env.DB.prepare(`
-          INSERT INTO contacts (name, email, subject, message, status)
-          VALUES (?, ?, ?, ?, 'new')
+          INSERT INTO contacts (name, email, subject, message, created_at, status)
+          VALUES (?, ?, ?, ?, datetime('now'), 'new')
         `).bind(
           data.name,
           data.email,
@@ -49,12 +26,11 @@ export async function onRequestPost({ request, env }) {
           data.message
         ).run();
         
-        // Optional: Send email notification (requires email service)
-        // This would need additional setup with a service like SendGrid, Mailgun, etc.
+        console.log('✅ Contact form submitted:', data.email);
         
-        return new Response(JSON.stringify({
+        return new Response(JSON.stringify({ 
           success: true,
-          message: 'Thank you for your message! We will get back to you soon.'
+          message: 'Message sent successfully'
         }), {
           status: 200,
           headers: {
@@ -62,34 +38,32 @@ export async function onRequestPost({ request, env }) {
             'Access-Control-Allow-Origin': '*'
           }
         });
-        
       } catch (dbError) {
-        console.error('Database error:', dbError);
-        
-        // Still return success to user but log error
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'Message received'
-        }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        console.error('❌ Database error:', dbError);
+        throw dbError;
       }
-    } else {
-      // No database configured - just return success
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'Message received'
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
     }
     
+    // If no database, just return success
+    console.log('⚠️  Contact form submitted (no database):', data.email);
+    
+    return new Response(JSON.stringify({ 
+      success: true,
+      message: 'Message received (database not available)'
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+    
   } catch (error) {
-    console.error('Contact form error:', error);
-    return new Response(JSON.stringify({
-      error: 'Internal server error'
+    console.error('❌ Contact form error:', error);
+    
+    return new Response(JSON.stringify({ 
+      error: 'Failed to send message',
+      details: error.message
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
@@ -97,7 +71,6 @@ export async function onRequestPost({ request, env }) {
   }
 }
 
-// Handle OPTIONS request for CORS
 export async function onRequestOptions() {
   return new Response(null, {
     status: 204,
