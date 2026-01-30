@@ -1,596 +1,654 @@
-// chat.js - FIXED VERSION
-// Complete frontend JavaScript with OAuth handling
+// chat.js - Complete Frontend Logic for Q-OTS
 
-// ============================================================================
-// NAVIGATION & ROUTING
-// ============================================================================
+// =============================================================================
+// CONFIGURATION
+// =============================================================================
 
-let currentPage = 'home';
-let navigationStack = ['home'];
+const API_BASE = '/api';
+const DEEPSEEK_API_URL = `${API_BASE}/chat`;
 
-function navigateTo(page, anchor = null) {
-    // Hide all pages
-    document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active'));
-    
-    // Show target page
-    const targetPage = document.getElementById(`page-${page}`);
-    if (targetPage) {
-        targetPage.classList.add('active');
-        currentPage = page;
-        
-        // Update navigation stack
-        if (navigationStack[navigationStack.length - 1] !== page) {
-            navigationStack.push(page);
-        }
-        
-        // Update nav links
-        document.querySelectorAll('.nav-link').forEach(link => {
-            link.classList.remove('active');
-            if (link.dataset.page === page) {
-                link.classList.add('active');
-            }
-        });
-        
-        // Update breadcrumb
-        updateBreadcrumb();
-        
-        // Scroll to top
-        window.scrollTo(0, 0);
-        
-        // Load page content if needed
-        if (page === 'features' && anchor) {
-            loadFeatureDetail(anchor);
-        } else if (page === 'features') {
-            loadAllFeatures();
-        } else if (page === 'community') {
-            loadCommunityContent();
-        }
-    }
-}
-
-function updateBreadcrumb() {
-    const breadcrumb = document.getElementById('breadcrumb');
-    const breadcrumbContent = document.getElementById('breadcrumbContent');
-    
-    if (navigationStack.length > 1) {
-        breadcrumb.classList.add('visible');
-        
-        let html = '<a href="#" class="breadcrumb-item" onclick="navigateTo(\'home\'); return false;">Home</a>';
-        
-        for (let i = 1; i < navigationStack.length; i++) {
-            const page = navigationStack[i];
-            const isLast = i === navigationStack.length - 1;
-            
-            html += '<span class="breadcrumb-separator">›</span>';
-            
-            if (isLast) {
-                html += `<span class="breadcrumb-item current">${capitalize(page)}</span>`;
-            } else {
-                html += `<a href="#" class="breadcrumb-item" onclick="navigateTo('${page}'); return false;">${capitalize(page)}</a>`;
-            }
-        }
-        
-        breadcrumbContent.innerHTML = html;
-    } else {
-        breadcrumb.classList.remove('visible');
-    }
-}
-
-function capitalize(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function toggleMobileMenu() {
-    const navLinks = document.querySelector('.nav-links');
-    navLinks.style.display = navLinks.style.display === 'flex' ? 'none' : 'flex';
-}
-
-// ============================================================================
-// AUTHENTICATION - FIXED
-// ============================================================================
+// =============================================================================
+// STATE MANAGEMENT
+// =============================================================================
 
 let currentUser = null;
+let chatMessages = [];
+let currentPage = 'home';
 
-// Check for existing session on page load
+// =============================================================================
+// INITIALIZATION
+// =============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Q-OTS Frontend initialized');
+  
+  // Check authentication status
+  checkAuthStatus();
+  
+  // Handle OAuth callback
+  handleOAuthCallback();
+  
+  // Initialize navigation
+  initializeNavigation();
+  
+  // Load community posts
+  loadCommunityPosts();
+  
+  // Initialize chat
+  initializeChat();
+});
+
+// =============================================================================
+// AUTHENTICATION
+// =============================================================================
+
 function checkAuthStatus() {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    // Handle auth success
-    if (urlParams.get('auth_success') === '1') {
-        // Load user from cookie
-        loadUserFromCookie();
-        
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-        // Show success toast
-        showToast('Successfully signed in!', 'success');
-    }
-    
-    // Handle auth error
-    if (urlParams.get('auth_error')) {
-        const error = urlParams.get('auth_error');
-        showToast(`Authentication failed: ${error}`, 'error');
-        
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    
-    // Check for existing user session
-    loadUserFromCookie();
-}
-
-function loadUserFromCookie() {
+  // Check for user_data cookie
+  const cookies = document.cookie.split(';');
+  const userDataCookie = cookies.find(c => c.trim().startsWith('user_data='));
+  
+  if (userDataCookie) {
     try {
-        const userDataCookie = document.cookie.split(';').find(c => c.trim().startsWith('user_data='));
-        
-        if (userDataCookie) {
-            const userData = userDataCookie.split('=')[1];
-            currentUser = JSON.parse(decodeURIComponent(userData));
-            updateUIForUser(currentUser);
-        }
+      const userData = JSON.parse(decodeURIComponent(userDataCookie.split('=')[1]));
+      currentUser = userData;
+      updateAuthUI(userData);
+      console.log('✅ User logged in:', userData.email);
     } catch (error) {
-        console.error('Error loading user from cookie:', error);
+      console.error('❌ Failed to parse user data:', error);
     }
+  } else {
+    console.log('ℹ️ No user logged in');
+  }
 }
 
-function updateUIForUser(user) {
-    const authBtn = document.getElementById('authBtn');
-    const userProfile = document.getElementById('userProfile');
-    const userAvatarImg = document.getElementById('userAvatarImg');
+function updateAuthUI(userData) {
+  // Hide auth button
+  const authBtn = document.getElementById('authBtn');
+  if (authBtn) authBtn.style.display = 'none';
+  
+  // Show user profile
+  const userProfile = document.getElementById('userProfile');
+  if (userProfile) {
+    userProfile.style.display = 'block';
+    
+    // Set avatar
+    const avatarImg = document.getElementById('userAvatarImg');
     const userInitial = document.getElementById('userInitial');
     
-    if (user) {
-        // Hide sign in button
-        authBtn.style.display = 'none';
-        
-        // Show user profile
-        userProfile.style.display = 'block';
-        
-        // Set avatar
-        if (user.avatar) {
-            userAvatarImg.src = user.avatar;
-            userAvatarImg.style.display = 'block';
-            userInitial.style.display = 'none';
-        } else {
-            userInitial.textContent = user.name?.charAt(0).toUpperCase() || 'U';
-            userAvatarImg.style.display = 'none';
-            userInitial.style.display = 'block';
-        }
-        
-        // Update community sections
-        document.getElementById('communityAuthPrompt').style.display = 'none';
-        document.getElementById('createDiscussion').style.display = 'block';
-        document.getElementById('createQuestion').style.display = 'block';
-        document.getElementById('createShowcase').style.display = 'block';
+    if (userData.avatar) {
+      avatarImg.src = userData.avatar;
+      avatarImg.style.display = 'block';
+      userInitial.style.display = 'none';
     } else {
-        authBtn.style.display = 'inline-flex';
-        userProfile.style.display = 'none';
-        
-        // Hide community create sections
-        document.getElementById('communityAuthPrompt').style.display = 'block';
-        document.getElementById('createDiscussion').style.display = 'none';
-        document.getElementById('createQuestion').style.display = 'none';
-        document.getElementById('createShowcase').style.display = 'none';
+      userInitial.textContent = userData.name ? userData.name[0].toUpperCase() : 'U';
+      avatarImg.style.display = 'none';
+      userInitial.style.display = 'block';
     }
+  }
+  
+  // Show create post forms in community
+  const createForms = ['createDiscussion', 'createQuestion', 'createShowcase'];
+  createForms.forEach(id => {
+    const elem = document.getElementById(id);
+    if (elem) elem.style.display = 'block';
+  });
+  
+  // Hide auth prompts
+  const authPrompt = document.getElementById('communityAuthPrompt');
+  if (authPrompt) authPrompt.style.display = 'none';
 }
 
-function showAuthModal() {
-    // For now, redirect to Google auth (can be expanded to show modal)
-    window.location.href = '/api/auth/google';
+function handleOAuthCallback() {
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  if (urlParams.has('auth_success')) {
+    showToast('Successfully signed in!', 'success');
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    // Reload to update UI
+    setTimeout(() => window.location.reload(), 1000);
+  }
+  
+  if (urlParams.has('auth_error')) {
+    const error = urlParams.get('auth_error');
+    showToast(`Authentication failed: ${error}`, 'error');
+    window.history.replaceState({}, '', window.location.pathname);
+  }
 }
 
 function signInWithGoogle() {
-    window.location.href = '/api/auth/google';
+  window.location.href = '/api/auth/google';
 }
 
 function signInWithGitHub() {
-    window.location.href = '/api/auth/github';
+  window.location.href = '/api/auth/github';
 }
 
-function logout() {
-    // Clear cookies
-    document.cookie = 'session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    document.cookie = 'user_data=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-    
-    currentUser = null;
-    updateUIForUser(null);
-    
-    showToast('Signed out successfully', 'success');
-    navigateTo('home');
+function showAuthModal() {
+  // For now, just redirect to community page with auth prompt
+  navigateTo('community');
 }
 
 function toggleUserDropdown() {
-    const dropdown = document.getElementById('userDropdown');
+  const dropdown = document.getElementById('userDropdown');
+  if (dropdown) {
     dropdown.classList.toggle('active');
+  }
 }
 
-// Close dropdown when clicking outside
-document.addEventListener('click', (e) => {
-    const userProfile = document.getElementById('userProfile');
-    const dropdown = document.getElementById('userDropdown');
-    
-    if (!userProfile?.contains(e.target)) {
-        dropdown?.classList.remove('active');
+function logout() {
+  // Clear cookies
+  document.cookie = 'session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  document.cookie = 'user_data=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  
+  currentUser = null;
+  showToast('Signed out successfully', 'success');
+  
+  setTimeout(() => window.location.reload(), 500);
+}
+
+// =============================================================================
+// NAVIGATION
+// =============================================================================
+
+function initializeNavigation() {
+  // Update active nav link based on current page
+  updateActiveNavLink(currentPage);
+}
+
+function navigateTo(page, section = null) {
+  console.log('📍 Navigating to:', page, section);
+  
+  // Hide all pages
+  document.querySelectorAll('.page-container').forEach(p => {
+    p.classList.remove('active');
+  });
+  
+  // Show target page
+  const targetPage = document.getElementById(`page-${page}`);
+  if (targetPage) {
+    targetPage.classList.add('active');
+    currentPage = page;
+  }
+  
+  // Update nav links
+  updateActiveNavLink(page);
+  
+  // Update breadcrumb
+  updateBreadcrumb(page);
+  
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  // Handle section-specific logic
+  if (page === 'features' && section) {
+    showFeatureDetail(section);
+  }
+  
+  if (page === 'community') {
+    if (section) {
+      showCommunitySection(section);
     }
-});
-
-// ============================================================================
-// CHAT WIDGET
-// ============================================================================
-
-let chatMessages = [];
-
-function toggleChat() {
-    const chatWindow = document.getElementById('chatWindow');
-    const chatToggle = document.getElementById('chatToggle');
-    
-    chatWindow.classList.toggle('active');
-    chatToggle.classList.toggle('active');
+    loadCommunityPosts();
+  }
 }
 
-function handleChatKeypress(event) {
-    if (event.key === 'Enter') {
-        sendMessage();
+function updateActiveNavLink(page) {
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.classList.remove('active');
+    if (link.dataset.page === page) {
+      link.classList.add('active');
     }
+  });
 }
 
-async function sendMessage() {
-    const input = document.getElementById('chatInput');
-    const message = input.value.trim();
-    
-    if (!message) return;
-    
-    // Add user message
-    addChatMessage(message, 'user');
-    input.value = '';
-    
-    // Show typing indicator
-    const typingMsg = addChatMessage('', 'bot', true);
-    
-    try {
-        // Call chat API
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message })
-        });
-        
-        // Remove typing indicator
-        typingMsg.remove();
-        
-        if (!response.ok) {
-            throw new Error('Chat API failed');
-        }
-        
-        const data = await response.json();
-        addChatMessage(data.response, 'bot');
-        
-    } catch (error) {
-        typingMsg.remove();
-        addChatMessage('Sorry, I encountered an error. Please try again.', 'bot');
-        console.error('Chat error:', error);
-    }
+function updateBreadcrumb(page) {
+  const breadcrumb = document.getElementById('breadcrumb');
+  const breadcrumbContent = document.getElementById('breadcrumbContent');
+  
+  if (page === 'home') {
+    breadcrumb.classList.remove('visible');
+    return;
+  }
+  
+  breadcrumb.classList.add('visible');
+  
+  const pageNames = {
+    features: 'Features',
+    community: 'Community',
+    contact: 'Contact',
+    profile: 'Profile'
+  };
+  
+  breadcrumbContent.innerHTML = `
+    <a href="#" class="breadcrumb-item" onclick="navigateTo('home'); return false;">Home</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-item current">${pageNames[page] || page}</span>
+  `;
 }
 
-function addChatMessage(text, type, isTyping = false) {
-    const messagesContainer = document.getElementById('chatMessages');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `chat-message ${type}`;
-    
-    if (isTyping) {
-        messageDiv.classList.add('typing');
-        messageDiv.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
-    } else {
-        messageDiv.textContent = text;
-    }
-    
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    
-    return messageDiv;
+function toggleMobileMenu() {
+  // Mobile menu toggle (implement if needed)
+  alert('Mobile menu - implement if needed');
 }
 
-// ============================================================================
+// =============================================================================
 // FEATURES PAGE
-// ============================================================================
+// =============================================================================
 
-const featureDetails = {
+function showFeatureDetail(section) {
+  const featureDetail = document.getElementById('featureDetail');
+  
+  const features = {
     qpand: {
-        title: 'QPand State Vector',
-        icon: '🎯',
-        content: `
-            <p>The QPand (Quantum-Pandimensional) state vector is a 17-dimensional representation capturing:</p>
-            <ul class="arch-list">
-                <li>Position (x, y)</li>
-                <li>Velocity (vx, vy)</li>
-                <li>Acceleration (ax, ay)</li>
-                <li>Jerk (jx, jy)</li>
-                <li>Curvature (κ)</li>
-                <li>Torsion (τ)</li>
-                <li>Directional orientation (θ)</li>
-                <li>Angular velocity (ω)</li>
-                <li>Scale (s)</li>
-                <li>Aspect ratio (α)</li>
-                <li>Temporal coherence (φ)</li>
-            </ul>
-            <div class="code-block">
-                <pre>qpand = [x, y, vx, vy, ax, ay, jx, jy, κ, τ, θ, ω, s, α, φ, ψ, Δt]</pre>
-            </div>
-            <p>This extended state representation enables the capture of complex nonlinear motion patterns typical in biological systems.</p>
-        `
+      title: 'QPand State Vector',
+      icon: '🎯',
+      content: `
+        <div class="feature-section">
+          <h3>17-Dimensional Extended State</h3>
+          <p>The QPand state vector captures comprehensive motion information:</p>
+          <ul class="arch-list">
+            <li>Position (x, y)</li>
+            <li>Velocity (vx, vy)</li>
+            <li>Acceleration (ax, ay)</li>
+            <li>Curvature (κ)</li>
+            <li>Jerk (jx, jy)</li>
+            <li>Directional orientation (θ)</li>
+          </ul>
+          <div class="code-block">
+            <pre>QPand = [x, y, vx, vy, ax, ay, κ, jx, jy, θ, ...]</pre>
+          </div>
+        </div>
+      `
     },
     boltzmann: {
-        title: 'Boltzmann Motion Field',
-        icon: '🌡️',
-        content: `
-            <p>Energy-based probabilistic motion modeling using statistical mechanics principles:</p>
-            <div class="code-block">
-                <pre>P(s) = (1/Z) * exp(-E(s) / kT)
-
-where:
-- E(s) = motion energy
-- Z = partition function
-- kT = thermal "temperature" parameter</pre>
-            </div>
-            <p>The Boltzmann field provides robust uncertainty quantification by treating motion prediction as a thermodynamic system.</p>
-        `
+      title: 'Boltzmann Field',
+      icon: '🌡️',
+      content: `
+        <div class="feature-section">
+          <h3>Energy-Based Probability Fields</h3>
+          <p>Statistical mechanics approach to motion modeling using Boltzmann distribution:</p>
+          <div class="code-block">
+            <pre>P(state) ∝ exp(-E(state) / kT)</pre>
+          </div>
+          <p>Provides robust uncertainty quantification and handles multi-modal distributions.</p>
+        </div>
+      `
     },
     bloch: {
-        title: 'Bloch Sphere Representation',
-        icon: '🔮',
-        content: `
-            <p>Quantum-inspired phase encoding maps motion states onto the Bloch sphere:</p>
-            <div class="code-block">
-                <pre>|ψ⟩ = cos(θ/2)|0⟩ + e^(iφ)|sin(θ/2)|1⟩
-
-Mapping:
-- θ: motion regime (ballistic ↔ diffusive)
-- φ: directional phase</pre>
-            </div>
-            <p>This enables seamless transitions between multiple motion regimes and handles state superpositions during occlusions.</p>
-        `
+      title: 'Bloch Representation',
+      icon: '🔮',
+      content: `
+        <div class="feature-section">
+          <h3>Quantum-Inspired Phase Encoding</h3>
+          <p>Motion states mapped onto Bloch sphere for multi-regime modeling:</p>
+          <ul class="arch-list">
+            <li>Phase coherence for similar motion patterns</li>
+            <li>Superposition of multiple motion regimes</li>
+            <li>Quantum interference for association</li>
+          </ul>
+        </div>
+      `
     },
     wavepacket: {
-        title: 'Wavepacket Dynamics',
-        icon: '〰️',
-        content: `
-            <p>Localized probability distributions that evolve according to:</p>
-            <div class="code-block">
-                <pre>iℏ ∂ψ/∂t = Ĥψ
-
-where Ĥ is the motion Hamiltonian</pre>
-            </div>
-            <p>During occlusions, wavepackets spread naturally, representing increasing uncertainty. Upon reappearance, measurement collapses the wavepacket.</p>
-        `
+      title: 'Wavepacket Dynamics',
+      icon: '〰️',
+      content: `
+        <div class="feature-section">
+          <h3>Localized Probability Distributions</h3>
+          <p>Gaussian wavepackets that spread during occlusions and interfere during re-identification.</p>
+          <p>Enables robust tracking through extended occlusions.</p>
+        </div>
+      `
     },
     neuralode: {
-        title: 'Neural ODEs',
-        icon: '🧠',
-        content: `
-            <p>Physics-informed neural differential equations learn complex dynamics:</p>
-            <div class="code-block">
-                <pre>dx/dt = f_θ(x, t)
-
-where f_θ is a neural network</pre>
-            </div>
-            <p>Trained with physics constraints to ensure learned dynamics respect conservation laws and known motion properties.</p>
-        `
+      title: 'Neural ODEs',
+      icon: '🧠',
+      content: `
+        <div class="feature-section">
+          <h3>Physics-Informed Learning</h3>
+          <p>Continuous-time dynamics modeling using Neural Ordinary Differential Equations.</p>
+          <p>Learns complex nonlinear motion patterns while respecting physical constraints.</p>
+        </div>
+      `
     },
     attention: {
-        title: 'Quantum Attention',
-        icon: '⚡',
-        content: `
-            <p>Phase-modulated attention mechanisms inspired by quantum interference:</p>
-            <div class="code-block">
-                <pre>Attention(Q,K,V) = softmax((QK^T + Φ)/√d)V
-
-where Φ encodes quantum phase relationships</pre>
-            </div>
-            <p>Enables the model to capture long-range correlations and interference patterns in multi-object scenarios.</p>
-        `
-    }
-};
-
-function loadFeatureDetail(featureId) {
-    const container = document.getElementById('featureDetail');
-    const feature = featureDetails[featureId];
-    
-    if (!feature) {
-        loadAllFeatures();
-        return;
-    }
-    
-    container.innerHTML = `
+      title: 'Quantum Attention',
+      icon: '⚡',
+      content: `
         <div class="feature-section">
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-                <div class="feature-icon" style="margin: 0;">${feature.icon}</div>
-                <h2>${feature.title}</h2>
-            </div>
-            ${feature.content}
+          <h3>Phase-Modulated Attention</h3>
+          <p>Attention mechanisms inspired by quantum interference patterns.</p>
+          <p>Improves association accuracy by leveraging phase relationships.</p>
         </div>
-    `;
-}
-
-function loadAllFeatures() {
-    const container = document.getElementById('featureDetail');
-    
-    let html = '';
-    for (const [id, feature] of Object.entries(featureDetails)) {
-        html += `
-            <div class="feature-section">
-                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                    <div class="feature-icon" style="margin: 0;">${feature.icon}</div>
-                    <h3>${feature.title}</h3>
-                </div>
-                ${feature.content}
-            </div>
-        `;
+      `
     }
-    
-    container.innerHTML = html;
+  };
+  
+  const feature = features[section] || features.qpand;
+  
+  featureDetail.innerHTML = `
+    <div class="feature-section">
+      <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+        <div class="feature-icon" style="margin: 0;">${feature.icon}</div>
+        <h2 style="margin: 0;">${feature.title}</h2>
+      </div>
+      ${feature.content}
+    </div>
+  `;
 }
 
-// ============================================================================
+// =============================================================================
 // COMMUNITY
-// ============================================================================
+// =============================================================================
 
 function showCommunitySection(section) {
-    // Update tabs
-    document.querySelectorAll('.community-tab').forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.dataset.section === section) {
-            tab.classList.add('active');
-        }
-    });
-    
-    // Update sections
-    document.querySelectorAll('.community-section').forEach(sec => {
-        sec.classList.remove('active');
-    });
-    
-    document.getElementById(`section-${section}`).classList.add('active');
-    
-    // Load content
-    loadCommunityContent(section);
+  // Update tabs
+  document.querySelectorAll('.community-tab').forEach(tab => {
+    tab.classList.remove('active');
+    if (tab.dataset.section === section) {
+      tab.classList.add('active');
+    }
+  });
+  
+  // Update sections
+  document.querySelectorAll('.community-section').forEach(sec => {
+    sec.classList.remove('active');
+  });
+  
+  const targetSection = document.getElementById(`section-${section}`);
+  if (targetSection) {
+    targetSection.classList.add('active');
+  }
+  
+  // Load posts for this section
+  loadCommunityPosts(section);
 }
 
-async function loadCommunityContent(section = 'discussions') {
-    // Placeholder - will connect to actual API
-    const mockPosts = [
-        {
-            id: 1,
-            author: 'Alice Chen',
-            avatar: '',
-            time: '2 hours ago',
-            title: 'Question about Boltzmann Field implementation',
-            content: 'Has anyone implemented the Boltzmann motion field? I\'m curious about the temperature parameter tuning...',
-            likes: 12,
-            comments: 5
-        },
-        {
-            id: 2,
-            author: 'Bob Smith',
-            avatar: '',
-            time: '5 hours ago',
-            title: 'QPand state normalization best practices',
-            content: 'What are the recommended approaches for normalizing the 17-dimensional QPand vector?',
-            likes: 8,
-            comments: 3
-        }
-    ];
+async function loadCommunityPosts(type = 'discussions') {
+  const typeMap = {
+    discussions: 'discussion',
+    qa: 'question',
+    showcase: 'showcase'
+  };
+  
+  const postType = typeMap[type] || 'discussion';
+  const listId = type === 'discussions' ? 'discussionsList' : 
+                 type === 'qa' ? 'questionsList' : 'showcaseList';
+  
+  const listEl = document.getElementById(listId);
+  if (!listEl) return;
+  
+  try {
+    const response = await fetch(`${API_BASE}/community/posts?type=${postType}`);
+    const posts = await response.json();
     
-    const listId = `${section}List`;
-    const container = document.getElementById(listId);
+    if (posts.length === 0) {
+      listEl.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-secondary);">No posts yet. Be the first to contribute!</div>';
+      return;
+    }
     
-    if (!container) return;
-    
-    container.innerHTML = mockPosts.map(post => `
-        <div class="post-card">
-            <div class="post-header">
-                <div class="post-avatar">${post.author.charAt(0)}</div>
-                <div class="post-meta">
-                    <h4>${post.author}</h4>
-                    <span>${post.time}</span>
-                </div>
-            </div>
-            <div class="post-content">
-                <h3>${post.title}</h3>
-                <p>${post.content}</p>
-            </div>
-            <div class="post-footer">
-                <button class="post-action">👍 ${post.likes}</button>
-                <button class="post-action">💬 ${post.comments}</button>
-                <button class="post-action">🔗 Share</button>
-            </div>
+    listEl.innerHTML = posts.map(post => `
+      <div class="post-card">
+        <div class="post-header">
+          <div class="post-avatar">
+            ${post.avatar ? `<img src="${post.avatar}" alt="${post.author}">` : post.author[0]}
+          </div>
+          <div class="post-meta">
+            <h4>${post.author || 'Anonymous'}</h4>
+            <span>${post.time || 'Just now'}</span>
+          </div>
         </div>
+        <div class="post-content">
+          <h3>${post.title}</h3>
+          <p>${post.content}</p>
+        </div>
+        <div class="post-footer">
+          <button class="post-action" onclick="likePost(${post.id})">
+            ❤️ ${post.likes || 0}
+          </button>
+          <button class="post-action">
+            💬 ${post.comments || 0}
+          </button>
+        </div>
+      </div>
     `).join('');
+  } catch (error) {
+    console.error('❌ Failed to load posts:', error);
+    listEl.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-secondary);">Failed to load posts</div>';
+  }
 }
 
 async function createPost(type, event) {
-    event.preventDefault();
+  event.preventDefault();
+  
+  if (!currentUser) {
+    showToast('Please sign in to create posts', 'error');
+    return;
+  }
+  
+  const formData = {
+    type,
+    title: document.getElementById(`${type}Title`).value,
+    content: document.getElementById(`${type}Content`).value
+  };
+  
+  if (type === 'discussion') {
+    formData.category = document.getElementById('discussionCategory').value;
+  } else if (type === 'question') {
+    formData.tags = document.getElementById('questionTags').value;
+  } else if (type === 'showcase') {
+    formData.url = document.getElementById('showcaseUrl').value;
+  }
+  
+  try {
+    const response = await fetch(`${API_BASE}/community/posts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
     
-    if (!currentUser) {
-        showToast('Please sign in to post', 'error');
-        return;
+    if (response.ok) {
+      showToast('Post created successfully!', 'success');
+      event.target.reset();
+      loadCommunityPosts(type === 'discussion' ? 'discussions' : type === 'question' ? 'qa' : 'showcase');
+    } else {
+      throw new Error('Failed to create post');
     }
-    
-    showToast('Post created successfully!', 'success');
-    
-    // Reset form
-    event.target.reset();
+  } catch (error) {
+    console.error('❌ Failed to create post:', error);
+    showToast('Failed to create post', 'error');
+  }
 }
 
-// ============================================================================
+function likePost(postId) {
+  if (!currentUser) {
+    showToast('Please sign in to like posts', 'error');
+    return;
+  }
+  
+  // Implement like functionality
+  showToast('Like functionality coming soon!', 'success');
+}
+
+// =============================================================================
 // CONTACT FORM
-// ============================================================================
+// =============================================================================
 
 async function submitContactForm(event) {
-    event.preventDefault();
+  event.preventDefault();
+  
+  const submitBtn = document.getElementById('contactSubmitBtn');
+  const originalText = submitBtn.textContent;
+  submitBtn.textContent = 'Sending...';
+  submitBtn.disabled = true;
+  
+  const formData = {
+    name: document.getElementById('contactName').value,
+    email: document.getElementById('contactEmail').value,
+    subject: document.getElementById('contactSubject').value,
+    message: document.getElementById('contactMessage').value
+  };
+  
+  try {
+    const response = await fetch(`${API_BASE}/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
     
-    const submitBtn = document.getElementById('contactSubmitBtn');
-    const originalText = submitBtn.textContent;
-    
-    submitBtn.textContent = 'Sending...';
-    submitBtn.disabled = true;
-    
-    const formData = {
-        name: document.getElementById('contactName').value,
-        email: document.getElementById('contactEmail').value,
-        subject: document.getElementById('contactSubject').value,
-        message: document.getElementById('contactMessage').value
-    };
-    
-    try {
-        const response = await fetch('/api/contact', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to send message');
-        }
-        
-        showToast('Message sent successfully!', 'success');
-        event.target.reset();
-        
-    } catch (error) {
-        console.error('Contact form error:', error);
-        showToast('Failed to send message. Please try again.', 'error');
-    } finally {
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
+    if (response.ok) {
+      showToast('Message sent successfully!', 'success');
+      event.target.reset();
+    } else {
+      throw new Error('Failed to send message');
     }
+  } catch (error) {
+    console.error('❌ Failed to send message:', error);
+    showToast('Failed to send message. Please try again.', 'error');
+  } finally {
+    submitBtn.textContent = originalText;
+    submitBtn.disabled = false;
+  }
 }
 
-// ============================================================================
-// UTILITIES
-// ============================================================================
+// =============================================================================
+// CHAT WIDGET
+// =============================================================================
+
+function initializeChat() {
+  const chatInput = document.getElementById('chatInput');
+  if (chatInput) {
+    chatInput.addEventListener('keypress', handleChatKeypress);
+  }
+}
+
+function toggleChat() {
+  const chatWindow = document.getElementById('chatWindow');
+  const chatToggle = document.getElementById('chatToggle');
+  
+  if (chatWindow && chatToggle) {
+    chatWindow.classList.toggle('active');
+    chatToggle.classList.toggle('active');
+  }
+}
+
+function handleChatKeypress(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    sendMessage();
+  }
+}
+
+async function sendMessage() {
+  const chatInput = document.getElementById('chatInput');
+  const chatMessages = document.getElementById('chatMessages');
+  const chatSend = document.getElementById('chatSend');
+  
+  if (!chatInput || !chatMessages) return;
+  
+  const message = chatInput.value.trim();
+  if (!message) return;
+  
+  // Add user message
+  const userMessage = document.createElement('div');
+  userMessage.className = 'chat-message user';
+  userMessage.textContent = message;
+  chatMessages.appendChild(userMessage);
+  
+  // Clear input
+  chatInput.value = '';
+  
+  // Show typing indicator
+  const typingIndicator = document.createElement('div');
+  typingIndicator.className = 'chat-message bot typing';
+  typingIndicator.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  chatMessages.appendChild(typingIndicator);
+  
+  // Scroll to bottom
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  // Disable send button
+  if (chatSend) chatSend.disabled = true;
+  
+  try {
+    const response = await fetch(DEEPSEEK_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    });
+    
+    // Remove typing indicator
+    typingIndicator.remove();
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      // Add bot response
+      const botMessage = document.createElement('div');
+      botMessage.className = 'chat-message bot';
+      botMessage.textContent = data.response || 'Sorry, I didn\'t understand that.';
+      chatMessages.appendChild(botMessage);
+    } else {
+      throw new Error('Failed to get response');
+    }
+  } catch (error) {
+    console.error('❌ Chat error:', error);
+    
+    // Remove typing indicator
+    typingIndicator.remove();
+    
+    // Add error message
+    const errorMessage = document.createElement('div');
+    errorMessage.className = 'chat-message bot';
+    errorMessage.textContent = 'Sorry, I\'m having trouble connecting right now. Please try again later.';
+    chatMessages.appendChild(errorMessage);
+  } finally {
+    // Re-enable send button
+    if (chatSend) chatSend.disabled = false;
+    
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+}
+
+// =============================================================================
+// UTILITY FUNCTIONS
+// =============================================================================
 
 function showToast(message, type = 'success') {
-    const container = document.getElementById('toastContainer');
-    
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <span>${type === 'success' ? '✓' : '✕'}</span>
-        <span>${message}</span>
-    `;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+  const toastContainer = document.getElementById('toastContainer');
+  if (!toastContainer) return;
+  
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `
+    <span>${type === 'success' ? '✅' : '❌'}</span>
+    <span>${message}</span>
+  `;
+  
+  toastContainer.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 
-// ============================================================================
-// INITIALIZATION
-// ============================================================================
+// =============================================================================
+// GLOBAL EXPORTS
+// =============================================================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuthStatus();
-    loadAllFeatures();
-});
+window.navigateTo = navigateTo;
+window.signInWithGoogle = signInWithGoogle;
+window.signInWithGitHub = signInWithGitHub;
+window.showAuthModal = showAuthModal;
+window.toggleUserDropdown = toggleUserDropdown;
+window.logout = logout;
+window.toggleMobileMenu = toggleMobileMenu;
+window.showCommunitySection = showCommunitySection;
+window.createPost = createPost;
+window.submitContactForm = submitContactForm;
+window.toggleChat = toggleChat;
+window.handleChatKeypress = handleChatKeypress;
+window.sendMessage = sendMessage;
