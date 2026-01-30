@@ -9,7 +9,6 @@ export async function onRequestGet({ request, env }) {
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
   
-  // Handle OAuth errors
   if (error) {
     return Response.redirect(`${SITE_URL}/?auth_error=${encodeURIComponent(error)}`, 302);
   }
@@ -18,7 +17,6 @@ export async function onRequestGet({ request, env }) {
     return Response.redirect(`${SITE_URL}/?auth_error=no_code`, 302);
   }
   
-  // Validate state
   const cookies = request.headers.get('Cookie') || '';
   const stateCookie = cookies.split(';').find(c => c.trim().startsWith('oauth_state='));
   const savedState = stateCookie?.split('=')[1];
@@ -28,7 +26,6 @@ export async function onRequestGet({ request, env }) {
   }
   
   try {
-    // Exchange code for token
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
       method: 'POST',
       headers: {
@@ -53,7 +50,6 @@ export async function onRequestGet({ request, env }) {
       return Response.redirect(`${SITE_URL}/?auth_error=${encodeURIComponent(tokens.error)}`, 302);
     }
     
-    // Get user info
     const userResponse = await fetch('https://api.github.com/user', {
       headers: {
         'Authorization': `Bearer ${tokens.access_token}`,
@@ -68,7 +64,6 @@ export async function onRequestGet({ request, env }) {
     
     const userInfo = await userResponse.json();
     
-    // Get email if not public
     let email = userInfo.email;
     if (!email) {
       const emailResponse = await fetch('https://api.github.com/user/emails', {
@@ -86,7 +81,6 @@ export async function onRequestGet({ request, env }) {
       }
     }
     
-    // Store user in database
     if (env.DB) {
       try {
         await env.DB.prepare(`
@@ -104,7 +98,6 @@ export async function onRequestGet({ request, env }) {
       }
     }
     
-    // Create session
     const sessionToken = crypto.randomUUID();
     const sessionData = {
       userId: String(userInfo.id),
@@ -115,7 +108,6 @@ export async function onRequestGet({ request, env }) {
       username: userInfo.login
     };
     
-    // Store in KV if available
     if (env.SESSIONS) {
       try {
         await env.SESSIONS.put(sessionToken, JSON.stringify(sessionData), { 
@@ -126,11 +118,9 @@ export async function onRequestGet({ request, env }) {
       }
     }
     
-    // Build redirect URL
     const redirectUrl = new URL(SITE_URL);
     redirectUrl.searchParams.set('auth_success', '1');
     
-    // Create redirect response
     const response = new Response(null, {
       status: 302,
       headers: {
@@ -138,7 +128,6 @@ export async function onRequestGet({ request, env }) {
       }
     });
     
-    // Set multiple cookies
     const cookieOptions = 'Path=/; Secure; SameSite=Lax; Max-Age=604800';
     response.headers.append('Set-Cookie', `session=${sessionToken}; ${cookieOptions}; HttpOnly`);
     response.headers.append('Set-Cookie', `user_data=${encodeURIComponent(JSON.stringify(sessionData))}; ${cookieOptions}`);
