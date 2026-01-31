@@ -1,21 +1,34 @@
 name = "q-ots-website"
 compatibility_date = "2024-01-01"
 
-# D1 Database binding - CRITICAL: Must match your database name!
+# D1 Database binding - Your exact database from screenshot
 [[d1_databases]]
 binding = "DB"
 database_name = "q-ots-website"
 database_id = "0b3fdbe3-18aa-483c-86cf-8936334d6e83"
 
-# KV Namespace for sessions (optional but recommended)
+# Note: KV namespace for sessions is OPTIONAL
+# If you get errors about missing SESSIONS binding:
+# 1. Go to Cloudflare Dashboard → Workers & Pages → KV
+# 2. Create a new KV namespace called "q-ots-sessions"
+# 3. Add binding in Cloudflare Pages settings:
+#    - Variable name: SESSIONS
+#    - KV namespace: q-ots-sessions
+# 
+# Or uncomment below if you already created KV namespace:
 # [[kv_namespaces]]
 # binding = "SESSIONS"
-# id = "your-kv-namespace-id"
+# id = "your-kv-namespace-id-here"
 
-# Environment variables (set in Cloudflare Dashboard)
-# DEEPSEEK_API_KEY
-# GOOGLE_CLIENT_ID
-# GOOGLE_CLIENT_SECRET
-# GITHUB_CLIENT_ID
-# GITHUB_CLIENT_SECRET
-# SITE_URL
+# Environment variables (set these in Cloudflare Dashboard → Pages → Settings → Environment variables)
+# Required:
+# - DEEPSEEK_API_KEY
+# - GOOGLE_CLIENT_ID
+# - GOOGLE_CLIENT_SECRET
+# - GITHUB_CLIENT_ID
+# - GITHUB_CLIENT_SECRET
+# - SITE_URL
+#
+# Optional:
+# - REQUIRE_AUTH = "false" (set to "true" if you want to require login for posts)
+# - ALLOWED_ORIGINS (for CORS, usually not needed)
