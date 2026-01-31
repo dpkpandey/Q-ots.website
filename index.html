@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q-OTS | Quantum-Oriented Tracking System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+<style>
+:root {
+    /* Enhanced color palette */
+    --bg-deep: #050510;
+    --bg-card: #0f0f1e;
+    --bg-elevated: #1a1a2e;
+    --accent-quantum: #00f5d4;
+    --accent-energy: #f72585;
+    --accent-wave: #7209b7;
+    --accent-gold: #ffd60a;
+    --accent-blue: #4361ee;
+    --text-primary: #ffffff;
+    --text-secondary: #b8b8d0;
+    --text-dim: #707090;
+    --border-subtle: rgba(255,255,255,0.1);
+    --glow-quantum: 0 0 50px rgba(0,245,212,0.4);
+    --glow-energy: 0 0 50px rgba(247,37,133,0.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Enhanced quantum background */
+.quantum-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background: 
+        radial-gradient(ellipse at 20% 20%, rgba(0,245,212,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(247,37,133,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(114,9,183,0.1) 0%, transparent 60%);
+}
+
+.quantum-bg::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: 
+        radial-gradient(circle at 30% 40%, rgba(67,97,238,0.12) 0%, transparent 50%),
+        radial-gradient(circle at 70% 60%, rgba(255,214,10,0.08) 0%, transparent 50%);
+    animation: quantumShift 25s ease-in-out infinite;
+}
+
+@keyframes quantumShift {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(-3%, 3%) rotate(2deg); }
+    66% { transform: translate(3%, -2%) rotate(-2deg); }
+}
+
+.grid-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image: 
+        linear-gradient(rgba(0,245,212,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,245,212,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Enhanced Navigation with larger logo */
+.nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    padding: 1.25rem 2rem;
+    background: rgba(5,5,16,0.85);
+    backdrop-filter: blur(30px);
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+}
+
+.nav-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: transform 0.3s ease;
+}
+
+.logo:hover {
+    transform: scale(1.05);
+}
+
+/* LARGER LOGO! */
+.logo-icon {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,245,212,0.3);
+}
+
+.logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.logo-fallback {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: var(--bg-deep);
+}
+
+.logo-icon.has-image .logo-fallback { display: none; }
+
+.logo-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-quantum), var(--text-primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.nav-link {
+    padding: 0.75rem 1.5rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-link::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: var(--accent-quantum);
+    transform: translateX(-50%);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.05);
+}
+
+.nav-link:hover::before {
+    width: 60%;
+}
+
+.nav-link.active {
+    color: var(--accent-quantum);
+    background: rgba(0,245,212,0.15);
+}
+
+.nav-btn {
+    padding: 0.75rem 1.75rem;
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    color: var(--bg-deep);
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,245,212,0.3);
+}
+
+.nav-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--glow-quantum);
+}
+
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.75rem;
+    cursor: pointer;
+}
+
+.main {
+    position: relative;
+    z-index: 2;
+    padding-top: 95px;
+}
+
+.page-container {
+    display: none;
+    animation: pageSlideIn 0.5s ease-out;
+}
+
+.page-container.active { display: block; }
+
+@keyframes pageSlideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Enhanced Hero Section */
+.hero {
+    min-height: calc(100vh - 95px);
+    display: flex;
+    align-items: center;
+    padding: 4rem 2rem;
+}
+
+.hero-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    align-items: center;
+}
+
+.hero-text h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+}
+
+.hero-text h1 span {
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-energy), var(--accent-wave));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 5s ease infinite;
+    background-size: 200% auto;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.hero-text p {
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-bottom: 2.5rem;
+}
+
+.hero-badges {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+}
+
+.badge {
+    padding: 0.75rem 1.25rem;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border-subtle);
+    border-radius: 25px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    backdrop-filter: blur(10px);
+}
+
+.badge-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent-quantum);
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 10px var(--accent-quantum);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.hero-actions {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 1.1rem 2.5rem;
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    color: var(--bg-deep);
+    box-shadow: 0 6px 30px rgba(0,245,212,0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--glow-quantum);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    border: 2px solid var(--border-subtle);
+}
+
+.btn-secondary:hover {
+    border-color: var(--accent-quantum);
+    background: rgba(0,245,212,0.1);
+    transform: translateY(-2px);
+}
+
+/* Enhanced Bloch Sphere */
+.hero-visual {
+    position: relative;
+    height: 450px;
+}
+
+.bloch-sphere {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sphere-container {
+    width: 350px;
+    height: 350px;
+    position: relative;
+    animation: float 7s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotateY(0deg); }
+    50% { transform: translateY(-25px) rotateY(180deg); }
+}
+
+.sphere {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(0,245,212,0.4), transparent 60%),
+                radial-gradient(circle at 70% 70%, rgba(247,37,133,0.3), transparent 60%),
+                linear-gradient(135deg, rgba(114,9,183,0.5), rgba(0,245,212,0.3));
+    border: 3px solid rgba(0,245,212,0.4);
+    box-shadow: inset 0 0 80px rgba(0,245,212,0.3), 0 0 100px rgba(0,245,212,0.4);
+    position: relative;
+}
+
+.sphere::before, .sphere::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 85%;
+    height: 85%;
+    border: 2px dashed rgba(255,255,255,0.25);
+    border-radius: 50%;
+}
+
+.sphere::before { transform: translate(-50%, -50%) rotateX(60deg); }
+.sphere::after { transform: translate(-50%, -50%) rotateY(60deg); }
+
+.state-vector {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 150px;
+    background: linear-gradient(to top, var(--accent-quantum), var(--accent-energy));
+    transform-origin: bottom center;
+    transform: translate(-50%, -100%) rotate(30deg);
+    border-radius: 3px;
+    animation: vectorRotate 10s linear infinite;
+    box-shadow: 0 0 20px rgba(0,245,212,0.6);
+}
+
+@keyframes vectorRotate {
+    0% { transform: translate(-50%, -100%) rotate(0deg); }
+    100% { transform: translate(-50%, -100%) rotate(360deg); }
+}
+
+.state-vector::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 18px solid var(--accent-energy);
+    filter: drop-shadow(0 0 10px var(--accent-energy));
+}
+
+/* NEW: Enhanced Stats Section */
+.stats {
+    padding: 5rem 2rem;
+    background: linear-gradient(180deg, var(--bg-card) 0%, rgba(15,15,30,0.5) 100%);
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.stats-grid {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2.5rem;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 2.5rem;
+    background: rgba(255,255,255,0.03);
+    border-radius: 16px;
+    border: 1px solid var(--border-subtle);
+    transition: all 0.4s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--accent-quantum);
+    background: rgba(0,245,212,0.05);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.stat-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+    margin-top: 0.75rem;
+}
+
+/* NEW: What is Q-OTS Section */
+.what-is-qots {
+    padding: 6rem 2rem;
+    background: var(--bg-deep);
+}
+
+.what-is-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-header {
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto 5rem;
+}
+
+.section-tag {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: rgba(0,245,212,0.15);
+    color: var(--accent-quantum);
+    border-radius: 25px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(0,245,212,0.3);
+}
+
+.section-header h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+.section-header p {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    line-height: 1.8;
+}
+
+.explanation-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+}
+
+.explanation-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 2.5rem;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.explanation-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-quantum), var(--accent-wave));
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.explanation-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--accent-quantum);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+}
+
+.explanation-card:hover::before {
+    opacity: 1;
+}
+
+.explanation-icon {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, rgba(0,245,212,0.2), rgba(114,9,183,0.2));
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+.explanation-card h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+}
+
+.explanation-card p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    font-size: 1.05rem;
+}
+
+/* Features Section */
+.features {
+    padding: 6rem 2rem;
+    background: var(--bg-card);
+}
+
+.features-grid {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+}
+
+.feature-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 2.5rem;
+    transition: all 0.4s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-quantum), var(--accent-wave));
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.feature-card:hover {
+    transform: translateY(-10px);
+    border-color: var(--accent-quantum);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+}
+
+.feature-card:hover::before {
+    opacity: 1;
+}
+
+.feature-icon {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, rgba(0,245,212,0.2), rgba(114,9,183,0.2));
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+.feature-card h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+}
+
+.feature-card p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 1.75rem;
+    font-size: 1.05rem;
+}
+
+.feature-link {
+    color: var(--accent-quantum);
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: gap 0.3s;
+}
+
+.feature-link:hover {
+    gap: 1rem;
+}
+
+/* Architecture Section */
+.architecture {
+    padding: 6rem 2rem;
+    background: var(--bg-deep);
+}
+
+.arch-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    align-items: center;
+}
+
+.arch-diagram {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 2.5rem;
+}
+
+.arch-layer {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.arch-layer:hover {
+    border-color: var(--accent-quantum);
+    transform: translateX(15px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.arch-layer:last-child {
+    margin-bottom: 0;
+}
+
+.arch-layer-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.arch-layer-content h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.1rem;
+    margin-bottom: 0.3rem;
+}
+
+.arch-layer-content p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.arch-text h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+}
+
+.arch-text p {
+    color: var(--text-secondary);
+    line-height: 1.9;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+.arch-list {
+    list-style: none;
+}
+
+.arch-list li {
+    padding: 1rem 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+}
+
+.arch-list li::before {
+    content: '→';
+    color: var(--accent-quantum);
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Version Banner */
+.version-banner {
+    padding: 5rem 2rem;
+    background: linear-gradient(135deg, rgba(0,245,212,0.12), rgba(114,9,183,0.12));
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.version-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.version-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 2rem;
+    background: var(--bg-card);
+    border: 2px solid var(--accent-quantum);
+    border-radius: 35px;
+    margin-bottom: 2rem;
+}
+
+.version-dot {
+    width: 12px;
+    height: 12px;
+    background: var(--accent-quantum);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 15px var(--accent-quantum);
+}
+
+.version-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.1rem;
+    color: var(--accent-quantum);
+    font-weight: 600;
+}
+
+.version-content h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.version-content p {
+    color: var(--text-secondary);
+    font-size: 1.15rem;
+}
+
+/* Footer */
+.footer {
+    padding: 4rem 2rem 2rem;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.footer-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 4rem;
+    margin-bottom: 3rem;
+}
+
+.footer-brand p {
+    color: var(--text-secondary);
+    line-height: 1.8;
+    margin-top: 1.25rem;
+    max-width: 350px;
+}
+
+.footer-links h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.15rem;
+    margin-bottom: 1.75rem;
+}
+
+.footer-links ul {
+    list-style: none;
+}
+
+.footer-links li {
+    margin-bottom: 1rem;
+}
+
+.footer-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: var(--accent-quantum);
+}
+
+.footer-bottom {
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--border-subtle);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+}
+
+.footer-social {
+    display: flex;
+    gap: 1.25rem;
+}
+
+.footer-social a {
+    width: 45px;
+    height: 45px;
+    background: var(--bg-elevated);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.footer-social a:hover {
+    background: var(--accent-quantum);
+    color: var(--bg-deep);
+    transform: translateY(-3px);
+}
+
+/* Chat Widget */
+.chat-widget {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 2000;
+}
+
+.chat-toggle {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--bg-deep);
+    box-shadow: 0 10px 40px rgba(0,245,212,0.5);
+    transition: all 0.3s ease;
+}
+
+.chat-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 15px 50px rgba(0,245,212,0.6);
+}
+
+.chat-toggle.active {
+    transform: rotate(45deg);
+}
+
+.chat-window {
+    position: absolute;
+    bottom: 90px;
+    right: 0;
+    width: 420px;
+    height: 600px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 24px;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 70px rgba(0,0,0,0.6);
+    animation: chatSlideUp 0.4s ease-out;
+}
+
+.chat-window.active {
+    display: flex;
+}
+
+@keyframes chatSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chat-header {
+    padding: 1.5rem 2rem;
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.chat-avatar {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.chat-header-info h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.15rem;
+}
+
+.chat-header-info p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.chat-status {
+    width: 12px;
+    height: 12px;
+    background: #22c55e;
+    border-radius: 50%;
+    margin-left: auto;
+    box-shadow: 0 0 10px #22c55e;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.chat-message {
+    max-width: 85%;
+    padding: 1.1rem 1.5rem;
+    border-radius: 18px;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+.chat-message.bot {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    align-self: flex-start;
+    border-bottom-left-radius: 6px;
+}
+
+.chat-message.user {
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    color: var(--bg-deep);
+    align-self: flex-end;
+    border-bottom-right-radius: 6px;
+}
+
+.chat-message.typing {
+    display: flex;
+    gap: 5px;
+    padding: 1.25rem 2rem;
+}
+
+.typing-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--text-secondary);
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+@keyframes typingBounce {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.chat-input-container {
+    padding: 1.5rem 2rem;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.chat-input-wrapper {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.chat-input {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    border-color: var(--accent-quantum);
+}
+
+.chat-input::placeholder {
+    color: var(--text-dim);
+}
+
+.chat-send {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg-deep);
+    font-size: 1.3rem;
+    transition: transform 0.2s;
+}
+
+.chat-send:hover {
+    transform: scale(1.1);
+}
+
+.chat-send:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Community page styles */
+.page-community {
+    padding: 6rem 2rem;
+}
+
+.community-header {
+    text-align: center;
+    max-width: 1400px;
+    margin: 0 auto 3rem;
+}
+
+.community-header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 3rem;
+    margin-bottom: 1.25rem;
+}
+
+.community-header p {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+}
+
+.community-tabs {
+    max-width: 1400px;
+    margin: 0 auto 2.5rem;
+    display: flex;
+    gap: 1.25rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.community-tab {
+    padding: 1.1rem 2.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: all 0.3s;
+    cursor: pointer;
+    font-size: 1.05rem;
+}
+
+.community-tab:hover, .community-tab.active {
+    background: rgba(0,245,212,0.12);
+    border-color: var(--accent-quantum);
+    color: var(--accent-quantum);
+    transform: translateY(-2px);
+}
+
+/* Sorting controls */
+.sort-controls {
+    max-width: 900px;
+    margin: 0 auto 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+}
+
+.sort-label {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.sort-btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.sort-btn:hover {
+    border-color: var(--accent-quantum);
+    color: var(--accent-quantum);
+    transform: translateY(-2px);
+}
+
+.sort-btn.active {
+    background: rgba(0,245,212,0.15);
+    border-color: var(--accent-quantum);
+    color: var(--accent-quantum);
+}
+
+.community-section {
+    max-width: 900px;
+    margin: 0 auto;
+    display: none;
+}
+
+.community-section.active {
+    display: block;
+}
+
+.auth-prompt {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 3.5rem;
+    text-align: center;
+    margin-bottom: 2.5rem;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.auth-prompt h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.auth-prompt p {
+    color: var(--text-secondary);
+    margin-bottom: 2.5rem;
+    font-size: 1.1rem;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 1.25rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.auth-btn {
+    padding: 1rem 2.5rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s;
+    cursor: pointer;
+    font-size: 1.05rem;
+}
+
+.auth-btn:hover {
+    border-color: var(--accent-quantum);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.auth-btn.google {
+    background: #fff;
+    color: #333;
+}
+
+.auth-btn.github {
+    background: #24292e;
+    color: #fff;
+}
+
+.create-post {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 20px;
+    padding: 2.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.create-post h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 2rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.75rem;
+    font-weight: 500;
+    font-size: 1.05rem;
+}
+
+.form-group input, .form-group textarea, .form-group select {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    border-color: var(--accent-quantum);
+}
+
+.form-group textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1.25rem;
+    justify-content: flex-end;
+}
+
+.post-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s;
+}
+
+.post-card:hover {
+    border-color: var(--accent-quantum);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.post-header {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.post-avatar {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    overflow: hidden;
+}
+
+.post-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.post-meta h4 {
+    font-size: 1.05rem;
+    margin-bottom: 0.3rem;
+}
+
+.post-meta span {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+.post-content h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.post-content p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    font-size: 1.05rem;
+}
+
+.post-footer {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.post-action {
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.2s;
+    background: none;
+    border: none;
+}
+
+.post-action:hover {
+    color: var(--accent-quantum);
+}
+
+.post-action.liked {
+    color: var(--accent-energy);
+}
+
+/* Contact page */
+.page-contact {
+    padding: 6rem 2rem;
+}
+
+.contact-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.contact-header {
+    text-align: center;
+    margin-bottom: 3.5rem;
+}
+
+.contact-header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 3rem;
+    margin-bottom: 1.25rem;
+}
+
+.contact-header p {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+}
+
+.contact-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 24px;
+    padding: 3rem;
+}
+
+.contact-info {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+    margin-top: 3.5rem;
+}
+
+.contact-info-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    transition: all 0.3s;
+}
+
+.contact-info-card:hover {
+    border-color: var(--accent-quantum);
+    transform: translateY(-5px);
+}
+
+.contact-info-icon {
+    width: 55px;
+    height: 55px;
+    background: linear-gradient(135deg, rgba(0,245,212,0.2), rgba(114,9,183,0.2));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+}
+
+.contact-info-text h4 {
+    font-size: 1.05rem;
+    margin-bottom: 0.3rem;
+}
+
+.contact-info-text p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.user-profile {
+    position: relative;
+}
+
+.user-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-quantum), var(--accent-wave));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s;
+    overflow: hidden;
+}
+
+.user-avatar:hover {
+    transform: scale(1.1);
+}
+
+.user-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: 55px;
+    right: 0;
+    width: 220px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    padding: 0.75rem;
+    display: none;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+}
+
+.user-dropdown.active {
+    display: block;
+}
+
+.user-dropdown a {
+    display: block;
+    padding: 1rem 1.25rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    border-radius: 10px;
+    transition: all 0.2s;
+}
+
+.user-dropdown a:hover {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    padding: 4rem;
+}
+
+.spinner {
+    width: 45px;
+    height: 45px;
+    border: 4px solid var(--border-subtle);
+    border-top-color: var(--accent-quantum);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.toast-container {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3000;
+}
+
+.toast {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+    animation: toastSlideUp 0.4s ease-out;
+}
+
+.toast.success {
+    border-color: #22c55e;
+}
+
+.toast.error {
+    border-color: #ef4444;
+}
+
+@keyframes toastSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 5rem 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-state-icon {
+    font-size: 5rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .hero-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+    .hero-visual {
+        height: 350px;
+    }
+    .sphere-container {
+        width: 300px;
+        height: 300px;
+    }
+    .features-grid, .explanation-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .arch-content {
+        grid-template-columns: 1fr;
+    }
+    .footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-links {
+        display: none;
+    }
+    .mobile-menu-btn {
+        display: block;
+    }
+    .hero-text h1 {
+        font-size: 2.75rem;
+    }
+    .section-header h2 {
+        font-size: 2.25rem;
+    }
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .features-grid, .explanation-grid {
+        grid-template-columns: 1fr;
+    }
+    .chat-window {
+        width: calc(100vw - 2rem);
+        right: -1rem;
+        height: 500px;
+    }
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+    }
+    .contact-info {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+<body>
+    <!-- CRITICAL: Emergency Callback Redirect Script -->
+    <script>
+    (function() {
+        const path = window.location.pathname;
+        const search = window.location.search;
+        
+        if (path.includes('/api/auth/google/callback') || path.includes('/api/auth/github/callback')) {
+            console.log('🚨 EMERGENCY REDIRECT: Callback URL detected');
+            const hasCode = search.includes('code=');
+            const redirectUrl = hasCode ? '/?auth_success=1' : '/?auth_error=callback_failed';
+            window.location.replace(redirectUrl);
+            throw new Error('Redirecting from callback');
+        }
+    })();
+    </script>
+    
+    <div class="quantum-bg"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- Enhanced Navigation with Larger Logo -->
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="#" class="logo" onclick="navigateTo('home'); return false;">
+                <div class="logo-icon" id="logoIcon">
+                    <img
+                        class="logo-img"
+                        src="/static/qots.png"
+                        alt="Q-OTS Logo"
+                        loading="eager"
+                        decoding="async"
+                        onload="document.getElementById('logoIcon')?.classList.add('has-image')"
+                        onerror="this.style.display='none';"
+                    />
+                    <div class="logo-fallback">Q</div>
+                </div>
+                <span class="logo-text">Q-OTS</span>
+            </a>
+            <div class="nav-links">
+                <a href="#" class="nav-link active" data-page="home" onclick="navigateTo('home'); return false;">Home</a>
+                <a href="#" class="nav-link" data-page="features" onclick="navigateTo('features'); return false;">Features</a>
+                <a href="#" class="nav-link" data-page="community" onclick="navigateTo('community'); return false;">Community</a>
+                <a href="#" class="nav-link" data-page="contact" onclick="navigateTo('contact'); return false;">Contact</a>
+                <div class="user-profile" id="userProfile" style="display: none;">
+                    <div class="user-avatar" onclick="toggleUserDropdown()">
+                        <img id="userAvatarImg" src="" alt="" style="display:none;">
+                        <span id="userInitial">U</span>
+                    </div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="#" onclick="navigateTo('profile'); return false;">Profile</a>
+                        <a href="#" onclick="logout(); return false;">Sign Out</a>
+                    </div>
+                </div>
+                <a href="#" class="nav-btn" id="authBtn" onclick="showAuthModal(); return false;">Sign In</a>
+            </div>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Page: Home (ENHANCED!) -->
+        <div class="page-container active" id="page-home">
+            <!-- Hero Section -->
+            <section class="hero">
+                <div class="hero-content">
+                    <div class="hero-text">
+                        <div class="hero-badges">
+                            <span class="badge"><span class="badge-dot"></span> dpkAI v0.1 In Development</span>
+                            <span class="badge">🔬 Research-Grade Framework</span>
+                        </div>
+                        <h1><span>Quantum-Inspired</span><br>Object Tracking System</h1>
+                        <p>A revolutionary physics-grounded framework unifying classical mechanics, statistical physics, and quantum-inspired representations for next-generation multi-object tracking in complex biological systems.</p>
+                        <div class="hero-actions">
+                            <a href="#" class="btn btn-primary" onclick="navigateTo('features'); return false;">Explore Architecture →</a>
+                            <a href="/Qsort.pdf" class="btn btn-secondary" target="_blank">📄 Read the Paper</a>
+                        </div>
+                    </div>
+                    <div class="hero-visual">
+                        <div class="bloch-sphere">
+                            <div class="sphere-container">
+                                <div class="sphere">
+                                    <div class="state-vector"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats Section -->
+            <section class="stats">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">17</div>
+                        <div class="stat-label">Dimensions in QPand</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">15+</div>
+                        <div class="stat-label">Chapters of Theory</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">∞</div>
+                        <div class="stat-label">Multi-Regime Motion</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">Ψ</div>
+                        <div class="stat-label">Wavepacket Dynamics</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- NEW: What is Q-OTS Section -->
+            <section class="what-is-qots">
+                <div class="what-is-content">
+                    <div class="section-header">
+                        <span class="section-tag">Understanding Q-OTS</span>
+                        <h2>What is Q-OTS?</h2>
+                        <p>Q-OTS (Quantum-Oriented Tracking System) is a groundbreaking approach that combines the precision of physics with the power of machine learning to solve one of computer vision's hardest problems: tracking objects through complex, nonlinear motion.</p>
+                    </div>
+                    <div class="explanation-grid">
+                        <div class="explanation-card">
+                            <div class="explanation-icon">🎯</div>
+                            <h3>The Challenge</h3>
+                            <p>Traditional trackers like SORT and DeepSORT assume linear motion and struggle with biological systems—insects, cells, fish—that move erratically, change direction suddenly, and disappear behind obstacles.</p>
+                        </div>
+                        <div class="explanation-card">
+                            <div class="explanation-icon">⚛️</div>
+                            <h3>The Innovation</h3>
+                            <p>Q-OTS treats motion as a probabilistic field governed by physics, using concepts from quantum mechanics (wavepackets, Bloch spheres) to represent uncertainty and multiple motion regimes simultaneously.</p>
+                        </div>
+                        <div class="explanation-card">
+                            <div class="explanation-icon">🔬</div>
+                            <h3>The Impact</h3>
+                            <p>From tracking neurons in the brain to monitoring wildlife, Q-OTS enables accurate multi-object tracking in scenarios where existing methods fail—opening new possibilities in biological research and beyond.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Features Section -->
+            <section class="features">
+                <div class="section-header">
+                    <span class="section-tag">Core Architecture</span>
+                    <h2>Physics-Grounded Neural Tracking</h2>
+                    <p>Q-OTS integrates principles from classical mechanics, thermodynamics, and quantum mechanics to create a unified framework for robust multi-object tracking.</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card" onclick="navigateTo('features', 'qpand')">
+                        <div class="feature-icon">🎯</div>
+                        <h3>QPand State Vector</h3>
+                        <p>17-dimensional extended state capturing position, velocity, acceleration, curvature, jerk, and directional orientation for comprehensive motion representation.</p>
+                        <span class="feature-link">Learn more →</span>
+                    </div>
+                    <div class="feature-card" onclick="navigateTo('features', 'boltzmann')">
+                        <div class="feature-icon">🌡️</div>
+                        <h3>Boltzmann Field</h3>
+                        <p>Energy-based probabilistic motion fields using statistical mechanics principles for robust uncertainty quantification during tracking.</p>
+                        <span class="feature-link">Learn more →</span>
+                    </div>
+                    <div class="feature-card" onclick="navigateTo('features', 'bloch')">
+                        <div class="feature-icon">🔮</div>
+                        <h3>Bloch Representation</h3>
+                        <p>Quantum-inspired phase encoding on the Bloch sphere enabling multi-regime motion modeling for complex behavioral patterns.</p>
+                        <span class="feature-link">Learn more →</span>
+                    </div>
+                    <div class="feature-card" onclick="navigateTo('features', 'wavepacket')">
+                        <div class="feature-icon">〰️</div>
+                        <h3>Wavepacket Dynamics</h3>
+                        <p>Localized probability distributions that naturally spread and interfere during occlusions, maintaining track continuity.</p>
+                        <span class="feature-link">Learn more →</span>
+                    </div>
+                    <div class="feature-card" onclick="navigateTo('features', 'neuralode')">
+                        <div class="feature-icon">🧠</div>
+                        <h3>Neural ODEs</h3>
+                        <p>Physics-informed neural differential equations for learning complex nonlinear dynamics directly from data.</p>
+                        <span class="feature-link">Learn more →</span>
+                    </div>
+                    <div class="feature-card" onclick="navigateTo('features', 'attention')">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Quantum Attention</h3>
+                        <p>Phase-modulated attention mechanisms inspired by quantum interference for enhanced object association.</p>
+                        <span class="feature-link">Learn more →</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Architecture Section -->
+            <section class="architecture">
+                <div class="arch-content">
+                    <div class="arch-diagram">
+                        <div class="arch-layer">
+                            <div class="arch-layer-icon">📥</div>
+                            <div class="arch-layer-content">
+                                <h4>Detection Input</h4>
+                                <p>YOLO / Faster R-CNN</p>
+                            </div>
+                        </div>
+                        <div class="arch-layer">
+                            <div class="arch-layer-icon">🎯</div>
+                            <div class="arch-layer-content">
+                                <h4>QPand Encoder</h4>
+                                <p>17-dimensional classical state</p>
+                            </div>
+                        </div>
+                        <div class="arch-layer">
+                            <div class="arch-layer-icon">🌡️</div>
+                            <div class="arch-layer-content">
+                                <h4>Boltzmann Field</h4>
+                                <p>Energy-based probability</p>
+                            </div>
+                        </div>
+                        <div class="arch-layer">
+                            <div class="arch-layer-icon">🔮</div>
+                            <div class="arch-layer-content">
+                                <h4>Bloch-Wavepacket</h4>
+                                <p>Quantum-inspired encoding</p>
+                            </div>
+                        </div>
+                        <div class="arch-layer">
+                            <div class="arch-layer-icon">🔗</div>
+                            <div class="arch-layer-content">
+                                <h4>Association</h4>
+                                <p>Hungarian + Interference</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="arch-text">
+                        <h2>Unified Tracking Pipeline</h2>
+                        <p>Q-OTS processes detections through a sophisticated multi-stage pipeline that extracts rich motion features and performs quantum-inspired association.</p>
+                        <ul class="arch-list">
+                            <li>Handles nonlinear biological motion patterns with physics constraints</li>
+                            <li>Robust to extended occlusions via wavepacket spreading mechanisms</li>
+                            <li>Multi-regime motion encoding using Bloch sphere representations</li>
+                            <li>Physics-constrained predictions ensure realistic trajectories</li>
+                            <li>End-to-end differentiable for seamless training</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Version Banner -->
+            <section class="version-banner">
+                <div class="version-content">
+                    <div class="version-tag">
+                        <span class="version-dot"></span>
+                        <span class="version-label">dpkAI v0.1</span>
+                    </div>
+                    <h3>Model Under Active Development</h3>
+                    <p>The first implementation of Q-OTS is being built from scratch. Stay tuned for the official release and benchmarks!</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Page: Features (keep existing) -->
+        <div class="page-container" id="page-features">
+            <div class="page-features">
+                <div class="page-header">
+                    <h1>Technical Architecture</h1>
+                    <p>Deep dive into the physics-grounded components that power Q-OTS</p>
+                </div>
+                <div class="feature-detail" id="featureDetail"></div>
+            </div>
+        </div>
+
+        <!-- Page: Community (with sorting) -->
+        <div class="page-container" id="page-community">
+            <div class="page-community">
+                <div class="community-header">
+                    <h1>Community Hub</h1>
+                    <p>Connect with researchers and developers working on Q-OTS</p>
+                </div>
+                <div class="community-tabs">
+                    <button class="community-tab active" data-section="discussions" onclick="showCommunitySection('discussions')">💬 Discussions</button>
+                    <button class="community-tab" data-section="qa" onclick="showCommunitySection('qa')">❓ Q&A</button>
+                    <button class="community-tab" data-section="showcase" onclick="showCommunitySection('showcase')">🚀 Showcase</button>
+                </div>
+
+                <!-- Sorting Controls -->
+                <div class="sort-controls">
+                    <span class="sort-label">Sort by:</span>
+                    <button class="sort-btn active" data-sort="recent" onclick="changeSortOrder('recent')">🕒 Recent</button>
+                    <button class="sort-btn" data-sort="likes" onclick="changeSortOrder('likes')">❤️ Most Liked</button>
+                    <button class="sort-btn" data-sort="responses" onclick="changeSortOrder('responses')">💬 Most Responded</button>
+                </div>
+
+                <div class="auth-prompt" id="communityAuthPrompt">
+                    <h3>Join the Q-OTS Community</h3>
+                    <p>Sign in to participate in discussions, ask questions, and share your projects.</p>
+                    <div class="auth-buttons">
+                        <button class="auth-btn google" onclick="signInWithGoogle()">
+                            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                            Continue with Google
+                        </button>
+                        <button class="auth-btn github" onclick="signInWithGitHub()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                            Continue with GitHub
+                        </button>
+                    </div>
+                </div>
+
+                <div class="community-section active" id="section-discussions">
+                    <div class="create-post" id="createDiscussion" style="display: none;">
+                        <h3>Start a Discussion</h3>
+                        <form onsubmit="createPost('discussion', event)">
+                            <div class="form-group">
+                                <label>Title</label>
+                                <input type="text" id="discussionTitle" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Content</label>
+                                <textarea id="discussionContent" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Category</label>
+                                <select id="discussionCategory">
+                                    <option value="general">General</option>
+                                    <option value="research">Research</option>
+                                    <option value="implementation">Implementation</option>
+                                </select>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Post</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div id="discussionsList"><div class="loading"><div class="spinner"></div></div></div>
+                </div>
+
+                <div class="community-section" id="section-qa">
+                    <div class="create-post" id="createQuestion" style="display: none;">
+                        <h3>Ask a Question</h3>
+                        <form onsubmit="createPost('question', event)">
+                            <div class="form-group">
+                                <label>Question</label>
+                                <input type="text" id="questionTitle" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Details</label>
+                                <textarea id="questionContent" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Tags</label>
+                                <input type="text" id="questionTags" placeholder="e.g., neural-ode, pytorch">
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Ask</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div id="questionsList"><div class="loading"><div class="spinner"></div></div></div>
+                </div>
+
+                <div class="community-section" id="section-showcase">
+                    <div class="create-post" id="createShowcase" style="display: none;">
+                        <h3>Share Your Project</h3>
+                        <form onsubmit="createPost('showcase', event)">
+                            <div class="form-group">
+                                <label>Project Name</label>
+                                <input type="text" id="showcaseTitle" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea id="showcaseContent" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>URL</label>
+                                <input type="url" id="showcaseUrl">
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">Share</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div id="showcaseList"><div class="loading"><div class="spinner"></div></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page: Contact -->
+        <div class="page-container" id="page-contact">
+            <div class="page-contact">
+                <div class="contact-container">
+                    <div class="contact-header">
+                        <h1>Get in Touch</h1>
+                        <p>Have questions, suggestions, or want to collaborate?</p>
+                    </div>
+                    <div class="contact-form">
+                        <form onsubmit="submitContactForm(event)">
+                            <div class="form-group">
+                                <label>Your Name *</label>
+                                <input type="text" id="contactName" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Email Address *</label>
+                                <input type="email" id="contactEmail" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Subject *</label>
+                                <select id="contactSubject" required>
+                                    <option value="">Select...</option>
+                                    <option value="question">Technical Question</option>
+                                    <option value="suggestion">Feature Suggestion</option>
+                                    <option value="bug">Bug Report</option>
+                                    <option value="collaboration">Research Collaboration</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Message *</label>
+                                <textarea id="contactMessage" required></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" id="contactSubmitBtn">Send Message →</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-info-card">
+                            <div class="contact-info-icon">📧</div>
+                            <div class="contact-info-text">
+                                <h4>Email</h4>
+                                <p>dpkai@protonmail.com</p>
+                            </div>
+                        </div>
+                        <div class="contact-info-card">
+                            <div class="contact-info-icon">💻</div>
+                            <div class="contact-info-text">
+                                <h4>GitHub</h4>
+                                <p>github.com/dpkpandey</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="logo" onclick="navigateTo('home'); return false;">
+                        <div class="logo-icon" id="logoIconFooter">
+                            <img
+                                class="logo-img"
+                                src="/static/qots.png"
+                                alt="Q-OTS Logo"
+                                loading="lazy"
+                                decoding="async"
+                                onload="document.getElementById('logoIconFooter')?.classList.add('has-image')"
+                                onerror="this.style.display='none';"
+                            />
+                            <div class="logo-fallback">Q</div>
+                        </div>
+                        <span class="logo-text">Q-OTS</span>
+                    </a>
+                    <p>A physics-grounded approach to multi-object tracking, bridging classical mechanics, statistical physics, and quantum-inspired representations.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="/Qsort.pdf" target="_blank">Research Paper</a></li>
+                        <li><a href="#" onclick="navigateTo('features'); return false;">Architecture</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="#" onclick="navigateTo('community'); return false;">Discussions</a></li>
+                        <li><a href="#" onclick="navigateTo('community'); showCommunitySection('qa'); return false;">Q&A</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://github.com/dpkpandey/Q-ots.website" target="_blank">GitHub</a></li>
+                        <li><a href="#" onclick="navigateTo('contact'); return false;">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2025 Q-OTS Project. Built with ❤️ for research.</span>
+                <div class="footer-social">
+                    <a href="https://github.com/dpkpandey" target="_blank">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chat Widget -->
+    <div class="chat-widget">
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <div class="chat-avatar">🤖</div>
+                <div class="chat-header-info">
+                    <h4>Q-OTS Assistant</h4>
+                    <p>Powered by DeepSeek + QSort</p>
+                </div>
+                <div class="chat-status"></div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-message bot">Hello! I'm the Q-OTS Assistant, trained on the complete QSort research paper. Ask me anything about quantum-inspired tracking!</div>
+            </div>
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <input type="text" class="chat-input" id="chatInput" placeholder="Ask about Q-OTS..." onkeypress="handleChatKeypress(event)">
+                    <button class="chat-send" id="chatSend" onclick="sendMessage()">➤</button>
+                </div>
+            </div>
+        </div>
+        <button class="chat-toggle" id="chatToggle" onclick="toggleChat()">💬</button>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="/chat.js"></script>
+</body>
+</html>
