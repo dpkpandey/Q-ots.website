@@ -1,5 +1,5 @@
 // functions/api/auth/github/callback.js
-// WORKING callback with proper redirect
+// FINAL FIX - JavaScript redirect that Cloudflare can't block
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
@@ -9,22 +9,12 @@ export async function onRequestGet({ request, env }) {
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
   
-  console.log('🔄 GitHub callback received');
-  
   if (error) {
-    console.error('❌ OAuth error:', error);
-    return new Response(null, {
-      status: 302,
-      headers: { 'Location': `${SITE_URL}/?auth_error=${error}` }
-    });
+    return createRedirectPage(`${SITE_URL}/?auth_error=${error}`);
   }
   
   if (!code) {
-    console.error('❌ No code');
-    return new Response(null, {
-      status: 302,
-      headers: { 'Location': `${SITE_URL}/?auth_error=no_code` }
-    });
+    return createRedirectPage(`${SITE_URL}/?auth_error=no_code`);
   }
   
   // Validate state
@@ -33,11 +23,7 @@ export async function onRequestGet({ request, env }) {
   const savedState = stateCookie?.split('=')[1];
   
   if (!savedState || savedState !== state) {
-    console.error('❌ State mismatch');
-    return new Response(null, {
-      status: 302,
-      headers: { 'Location': `${SITE_URL}/?auth_error=invalid_state` }
-    });
+    return createRedirectPage(`${SITE_URL}/?auth_error=invalid_state`);
   }
   
   try {
@@ -57,21 +43,13 @@ export async function onRequestGet({ request, env }) {
     });
     
     if (!tokenResponse.ok) {
-      console.error('❌ Token failed');
-      return new Response(null, {
-        status: 302,
-        headers: { 'Location': `${SITE_URL}/?auth_error=token_failed` }
-      });
+      return createRedirectPage(`${SITE_URL}/?auth_error=token_failed`);
     }
     
     const tokens = await tokenResponse.json();
     
     if (tokens.error) {
-      console.error('❌ Token error:', tokens.error);
-      return new Response(null, {
-        status: 302,
-        headers: { 'Location': `${SITE_URL}/?auth_error=${tokens.error}` }
-      });
+      return createRedirectPage(`${SITE_URL}/?auth_error=${tokens.error}`);
     }
     
     // Get user info
@@ -84,11 +62,7 @@ export async function onRequestGet({ request, env }) {
     });
     
     if (!userResponse.ok) {
-      console.error('❌ User info failed');
-      return new Response(null, {
-        status: 302,
-        headers: { 'Location': `${SITE_URL}/?auth_error=userinfo_failed` }
-      });
+      return createRedirectPage(`${SITE_URL}/?auth_error=userinfo_failed`);
     }
     
     const userInfo = await userResponse.json();
@@ -114,8 +88,6 @@ export async function onRequestGet({ request, env }) {
         console.error('Email fetch error:', e);
       }
     }
-    
-    console.log('✅ User:', userInfo.login);
     
     // Save to database
     if (env.DB) {
@@ -161,19 +133,11 @@ export async function onRequestGet({ request, env }) {
       }
     }
     
-    console.log('➡️ Redirecting to homepage');
-    
-    // CREATE PROPER REDIRECT RESPONSE
-    const response = new Response(null, {
-      status: 302,
-      headers: {
-        'Location': `${SITE_URL}/?auth_success=1`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      }
-    });
+    // Create redirect page with cookies
+    const response = createRedirectPage(`${SITE_URL}/?auth_success=1`);
     
     // Set cookies
-    const cookieAge = 604800; // 7 days
+    const cookieAge = 604800;
     response.headers.append('Set-Cookie', `session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${cookieAge}`);
     response.headers.append('Set-Cookie', `user_data=${encodeURIComponent(JSON.stringify(sessionData))}; Path=/; Secure; SameSite=Lax; Max-Age=${cookieAge}`);
     response.headers.append('Set-Cookie', `oauth_state=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
@@ -181,10 +145,36 @@ export async function onRequestGet({ request, env }) {
     return response;
     
   } catch (error) {
-    console.error('❌ Error:', error);
-    return new Response(null, {
-      status: 302,
-      headers: { 'Location': `${SITE_URL}/?auth_error=server_error` }
-    });
+    console.error('Error:', error);
+    return createRedirectPage(`${SITE_URL}/?auth_error=server_error`);
   }
+}
+
+function createRedirectPage(redirectUrl) {
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting...</title>
+  <script>
+    // Immediate redirect
+    window.location.replace("${redirectUrl}");
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content="0;url=${redirectUrl}">
+  </noscript>
+</head>
+<body>
+  <p>Redirecting to homepage...</p>
+  <p>If not redirected, <a href="${redirectUrl}">click here</a>.</p>
+</body>
+</html>`;
+
+  return new Response(html, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/html; charset=UTF-8',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    }
+  });
 }
