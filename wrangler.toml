@@ -1,11 +1,21 @@
 name = "q-ots-website"
 compatibility_date = "2024-01-01"
 
+# D1 Database binding - CRITICAL: Must match your database name!
 [[d1_databases]]
 binding = "DB"
-database_name = "qots-db"
+database_name = "q-ots-website"
 database_id = "0b3fdbe3-18aa-483c-86cf-8936334d6e83"
 
-[[kv_namespaces]]
-binding = "SESSIONS"
-id = "your-kv-namespace-id"  # Optional: Create KV namespace if needed
+# KV Namespace for sessions (optional but recommended)
+# [[kv_namespaces]]
+# binding = "SESSIONS"
+# id = "your-kv-namespace-id"
+
+# Environment variables (set in Cloudflare Dashboard)
+# DEEPSEEK_API_KEY
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
+# GITHUB_CLIENT_ID
+# GITHUB_CLIENT_SECRET
+# SITE_URL
