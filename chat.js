@@ -381,8 +381,7 @@ async function loadCommunityPosts(type = 'discussions') {
   
   try {
     const response = await fetch(`${API_BASE}/community/posts?type=${postType}`);
-    const data =await res.json().catch(() => ({}));
-    const posts = Array.isArray(data.posts) ? data.posts : [];
+    const posts = await response.json();
     
     if (posts.length === 0) {
       listEl.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-secondary);">No posts yet. Be the first to contribute!</div>';
