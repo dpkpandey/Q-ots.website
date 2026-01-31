@@ -1,8 +1,0 @@
-# Cloudflare Pages _redirects file
-# This tells Cloudflare NOT to serve index.html for API routes
-
-# API routes should use Functions, not serve index.html
-/api/* 200!
-
-# Everything else can use SPA routing (serve index.html)
-/* /index.html 200
