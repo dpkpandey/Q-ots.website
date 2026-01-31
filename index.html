@@ -1200,6 +1200,44 @@ body {
 </style>
 </head>
 <body>
+    <!-- ============================================= -->
+    <!-- EMERGENCY CALLBACK REDIRECT - ADD THIS FIRST -->
+    <!-- ============================================= -->
+    <script>
+    // Emergency callback redirect handler
+    // This runs BEFORE anything else loads
+    (function() {
+        const path = window.location.pathname;
+        const search = window.location.search;
+        
+        // If we're on a callback URL, redirect to homepage immediately
+        if (path.includes('/api/auth/google/callback') || path.includes('/api/auth/github/callback')) {
+            console.log('🚨 Emergency redirect from callback URL detected');
+            console.log('   Current path:', path);
+            console.log('   Query params:', search);
+            
+            // Check if OAuth was successful (has code parameter)
+            const hasCode = search.includes('code=');
+            
+            if (hasCode) {
+                // Successful auth - redirect to homepage with success flag
+                console.log('   ✅ Successful OAuth - redirecting with auth_success=1');
+                window.location.replace('/?auth_success=1');
+            } else {
+                // Error or no code - redirect to homepage with error
+                console.log('   ❌ Failed OAuth - redirecting with error');
+                window.location.replace('/?auth_error=callback_failed');
+            }
+            
+            // Stop further page execution
+            return;
+        }
+    })();
+    </script>
+    <!-- ============================================= -->
+    <!-- END OF EMERGENCY REDIRECT SCRIPT -->
+    <!-- ============================================= -->
+
     <div class="quantum-bg"></div>
     <div class="grid-overlay"></div>
 
