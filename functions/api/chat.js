@@ -1,184 +1,207 @@
 // functions/api/chat.js
-// DeepSeek AI Chat with complete QSort.pdf knowledge
+// DeepSeek AI Chatbot - FIXED VERSION with error handling
 
-export async function onRequestPost({ request, env }) {
-  try {
-    const { message } = await request.json();
+export async function onRequestPost(context) {
+    const { request, env } = context;
     
-    if (!message || message.trim() === '') {
-      return jsonResponse({ 
-        error: 'Message is required',
-        response: 'Please provide a message.' 
-      }, 400);
-    }
-
-    // Check if DeepSeek API key is configured
-    if (!env.DEEPSEEK_API_KEY) {
-      console.error('DEEPSEEK_API_KEY not configured');
-      return jsonResponse({ 
-        error: 'API not configured',
-        response: 'Sorry, the AI service is not configured. Please contact the administrator.' 
-      }, 500);
-    }
-
-    // Complete QSort knowledge system prompt
-    const SYSTEM_PROMPT = `You are an expert AI assistant specializing in Q-OTS (Quantum-Oriented Tracking System), also known as QSort. You have complete knowledge of the QSort research paper.
-
-KEY CONCEPTS:
-
-1. QPand State Vector (17 Dimensions):
-   - Position (x, y): 2D location
-   - Velocity (vx, vy): Motion speed and direction
-   - Acceleration (ax, ay): Rate of velocity change
-   - Jerk (jx, jy): Rate of acceleration change  
-   - Curvature (κx, κy): Path bending
-   - Directional orientation (θx, θy, θz): 3D angles
-   - Aspect ratio (w/h): Bounding box shape
-   Total: 17 dimensions capturing complete motion state
-
-2. Boltzmann Motion Field:
-   - Uses statistical mechanics
-   - Energy-based probability: P(state) ∝ exp(-E/kT)
-   - Temperature T controls uncertainty
-   - Energy function based on motion coherence
-   - Robust tracking under occlusions
-
-3. Bloch Sphere Representation:
-   - Quantum-inspired state encoding
-   - Maps motion regimes to Bloch sphere points
-   - θ (polar): Motion smoothness
-   - φ (azimuthal): Direction changes
-   - Multi-regime motion modeling
-
-4. Wavepacket Dynamics:
-   - Probability distributions that spread over time
-   - Gaussian wavepackets: ψ(x,t) = exp(-(x-x₀)²/2σ²(t))
-   - Uncertainty grows during occlusions: σ²(t) = σ₀² + (ħt/2m)²
-   - Interference for multi-hypothesis tracking
-
-5. Neural ODEs:
-   - Physics-informed neural networks
-   - Learn dynamics: dx/dt = f(x, t; θ)
-   - Continuous-time modeling
-   - Captures nonlinear motion
-
-6. Quantum Attention:
-   - Phase-modulated attention weights
-   - Combines softmax with quantum interference
-   - Attention(Q,K,V) = softmax(QK^T/√d + φ)V
-
-7. Architecture:
-   Input: YOLO/Faster R-CNN detections
-   → QPand Encoder: Extract 17-dim features
-   → Boltzmann Field: Energy-based probabilities
-   → Bloch-Wavepacket: Quantum encoding
-   → Association: Hungarian + Interference
-   Output: Tracked object IDs
-
-8. Advantages:
-   - Handles nonlinear biological motion
-   - Robust to long occlusions
-   - Multi-regime motion representation
-   - Physics-constrained predictions
-   - Uncertainty quantification
-
-9. Comparisons:
-   - SORT: Basic Kalman, linear motion only
-   - DeepSORT: Adds appearance, still linear
-   - ByteTrack: Better occlusion, no physics
-   - Q-OTS: Physics-grounded, all motion regimes
-
-10. Math Foundations:
-    - Hamiltonian mechanics: H = T + V
-    - Schrödinger equation: iħ∂ψ/∂t = Hψ  
-    - Boltzmann distribution: P = exp(-βE)/Z
-    - Neural ODE: dx/dt = NeuralNet(x, t)
-
-Answer questions about Q-OTS/QSort using this knowledge. Be precise, technical, and reference specific concepts. Use LaTeX-style notation for math when appropriate.`;
-
-    // Call DeepSeek API
-    console.log('Calling DeepSeek API...');
-    
-    const apiResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
+    // Add CORS headers
+    const corsHeaders = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.DEEPSEEK_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          {
-            role: 'system',
-            content: SYSTEM_PROMPT
-          },
-          {
-            role: 'user',
-            content: message
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1500,
-        stream: false
-      })
-    });
-
-    if (!apiResponse.ok) {
-      const errorText = await apiResponse.text();
-      console.error('DeepSeek API error:', apiResponse.status, errorText);
-      throw new Error(`DeepSeek API error: ${apiResponse.status} - ${errorText}`);
-    }
-
-    const data = await apiResponse.json();
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+    };
     
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('Invalid DeepSeek response:', data);
-      throw new Error('Invalid response from DeepSeek API');
+    try {
+        console.log('💬 Chat request received');
+        
+        // Parse request body
+        let body;
+        try {
+            body = await request.json();
+        } catch (e) {
+            console.error('❌ Invalid JSON in request');
+            return new Response(JSON.stringify({
+                response: 'Invalid request format.'
+            }), {
+                status: 400,
+                headers: corsHeaders
+            });
+        }
+        
+        const { message } = body;
+        
+        if (!message) {
+            console.error('❌ No message provided');
+            return new Response(JSON.stringify({
+                response: 'Please provide a message.'
+            }), {
+                status: 400,
+                headers: corsHeaders
+            });
+        }
+        
+        console.log('💬 Message:', message.substring(0, 50) + '...');
+        
+        // Check if DeepSeek API key is configured
+        if (!env.DEEPSEEK_API_KEY) {
+            console.error('❌ DEEPSEEK_API_KEY not configured');
+            return new Response(JSON.stringify({
+                response: 'The chatbot is not configured yet. Please contact the administrator to set up the DeepSeek API key.'
+            }), {
+                status: 200,
+                headers: corsHeaders
+            });
+        }
+        
+        // System prompt with Qsort.pdf knowledge
+        const systemPrompt = `You are dpkAI, an AI assistant specialized in Q-OTS (Quantum-Inspired Object Tracking System). You have complete knowledge of the Qsort research paper.
+
+## Your Knowledge Base:
+
+### 1. QPand State Vector (17-Dimensional)
+Position (x,y), Velocity (vx,vy), Acceleration (ax,ay), Curvature (κx,κy), Jerk (jx,jy), Direction (θ), Angular velocity (ω), Arc length (s), Temporal momentum (pt), Energy density (ρE), Mean (μ), Spread (σ)
+
+### 2. Boltzmann Motion Field
+Energy-based probability: P(q) ∝ exp(-E(q)/T)
+Temperature T controls uncertainty/exploration
+
+### 3. Bloch Sphere Representation
+Maps 2D motion to 3D quantum states
+Polar angle θ = speed, Azimuthal φ = direction
+
+### 4. Wavepacket Dynamics
+Gaussian wavepackets: Ψ(x,t) with spreading during occlusions
+Schrödinger-inspired evolution
+
+### 5. Neural ODEs
+Continuous-time dynamics: dq/dt = f_θ(q,t)
+Physics-informed learning
+
+### 6. Comparisons
+- vs SORT: Linear Kalman vs 17-D nonlinear QPand
+- vs DeepSORT: Adds appearance but simpler dynamics
+- vs ByteTrack: Two-step association vs unified energy landscape
+
+### 7. Applications
+Autonomous driving, surveillance, sports analytics, robotics, cell tracking
+
+Be concise, technically accurate, and helpful. Use equations when relevant.`;
+        
+        console.log('🔄 Calling DeepSeek API...');
+        
+        // Call DeepSeek API
+        let deepseekResponse;
+        try {
+            deepseekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${env.DEEPSEEK_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: systemPrompt
+                        },
+                        {
+                            role: 'user',
+                            content: message
+                        }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 1500,
+                    stream: false
+                })
+            });
+        } catch (fetchError) {
+            console.error('❌ Network error calling DeepSeek:', fetchError);
+            return new Response(JSON.stringify({
+                response: 'Unable to reach the AI service. Please check your internet connection and try again.'
+            }), {
+                status: 200,
+                headers: corsHeaders
+            });
+        }
+        
+        if (!deepseekResponse.ok) {
+            const errorText = await deepseekResponse.text();
+            console.error('❌ DeepSeek API error:', deepseekResponse.status, errorText);
+            
+            // Check for common errors
+            if (deepseekResponse.status === 401) {
+                return new Response(JSON.stringify({
+                    response: 'API authentication failed. Please contact the administrator.'
+                }), {
+                    status: 200,
+                    headers: corsHeaders
+                });
+            } else if (deepseekResponse.status === 429) {
+                return new Response(JSON.stringify({
+                    response: 'Too many requests. Please wait a moment and try again.'
+                }), {
+                    status: 200,
+                    headers: corsHeaders
+                });
+            } else {
+                return new Response(JSON.stringify({
+                    response: 'The AI service is temporarily unavailable. Please try again in a moment.'
+                }), {
+                    status: 200,
+                    headers: corsHeaders
+                });
+            }
+        }
+        
+        let data;
+        try {
+            data = await deepseekResponse.json();
+        } catch (parseError) {
+            console.error('❌ Error parsing DeepSeek response:', parseError);
+            return new Response(JSON.stringify({
+                response: 'Received an invalid response from the AI service. Please try again.'
+            }), {
+                status: 200,
+                headers: corsHeaders
+            });
+        }
+        
+        const aiResponse = data.choices?.[0]?.message?.content || 'Sorry, I received an empty response.';
+        
+        console.log('✅ DeepSeek response received');
+        
+        return new Response(JSON.stringify({ 
+            response: aiResponse 
+        }), {
+            status: 200,
+            headers: corsHeaders
+        });
+        
+    } catch (error) {
+        console.error('❌ Unexpected chat error:', error);
+        return new Response(JSON.stringify({
+            response: 'An unexpected error occurred. Please try again or contact support if the problem persists.'
+        }), {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
     }
-
-    const aiResponse = data.choices[0].message.content;
-
-    return jsonResponse({ 
-      success: true,
-      response: aiResponse 
-    }, 200);
-
-  } catch (error) {
-    console.error('Chat API error:', error);
-    return jsonResponse({ 
-      error: 'Failed to get AI response',
-      response: 'Sorry, I\'m having trouble connecting right now. Please try again later.',
-      details: error.message 
-    }, 500);
-  }
 }
 
-// Handle CORS preflight
-export async function onRequestOptions({ request, env }) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders(request, env)
-  });
-}
-
-function jsonResponse(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Cache-Control': 'no-store'
-    }
-  });
-}
-
-function corsHeaders(request, env) {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400'
-  };
+// Handle OPTIONS for CORS
+export async function onRequestOptions() {
+    return new Response(null, {
+        status: 204,
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '86400'
+        }
+    });
 }
